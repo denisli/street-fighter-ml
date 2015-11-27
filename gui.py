@@ -32,10 +32,12 @@ def main():
     health_bar2 = HealthBar(400, 50, 100)
     controller1 = Player1Controller(player1)
     controller2 = Player2Controller(player2)
-    physics = SimplePhysics(game_objects, -0.0001)
+    physics = SimplePhysics(game_objects, -0.003)
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
+    clock = pygame.time.Clock()
     # handle game loop
+    clock.tick() # start the clock
     while 1:
         # handle user input
         events = pygame.event.get()
@@ -48,7 +50,9 @@ def main():
                 sys.exit()
 
         # apply character interaction
-        physics.update(30)
+        # stop consuming the processor
+        time = clock.tick(60)
+        physics.update(time)
 
         # update displays
         health_bar1.update_value(player1.health)
@@ -68,9 +72,6 @@ def main():
         countdown_label.render(screen)
 
         pygame.display.flip()
-
-        # stop consuming the processor
-        pygame.time.delay(3)
 
 
 if __name__ == '__main__':

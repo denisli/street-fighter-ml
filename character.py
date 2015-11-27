@@ -130,9 +130,8 @@ class Character(object):
 			self.has_moved_right = True
 
 	def jump(self):
-		if (self.bounding_box.y == 400):
-			if (self.delay == 0):
-				self.has_jumped = True
+		if (self.delay == 0):
+			self.has_jumped = True
 
 	def finish_move_left(self, time_elapsed):
 		self.bounding_box.x -= self.movement_speed * time_elapsed
@@ -152,8 +151,9 @@ class Character(object):
 		elif self.bounding_box.x > right_bound:
 			self.bounding_box.x = right_bound
 
-	def initiate_jump(self, time_elapsed):
-		self.vertical_speed = self.jump_speed
+	def initiate_jump(self, floor_bound):
+		if (self.bounding_box.y == floor_bound):
+			self.vertical_speed = self.jump_speed
 		self.has_jumped = False
 		
 	def apply_gravity(self, gravity, time_elapsed):

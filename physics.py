@@ -6,6 +6,9 @@ class SimplePhysics:
 		self.game_objects = game_objects
 		self.gravity = gravity
 		self.countdown = 120 * 1000
+		self.floor = 400
+		self.left_wall = 10
+		self.right_wall = 650
 
 	def update(self, time_elapsed):
 		players = self.game_objects.players
@@ -33,7 +36,7 @@ class SimplePhysics:
 			if (player.has_moved_right):
 				player.finish_move_right(time_elapsed)
 			if (player.has_jumped):
-				player.initiate_jump(time_elapsed)
+				player.initiate_jump(self.floor)
 			if (player.has_punched):
 				# write some code for how the punch interacts with the enemy player
 				if player_punch_hits_opponent(player, opponent):
@@ -45,8 +48,8 @@ class SimplePhysics:
 				player.finish_kick()
 			player.update_vertical(time_elapsed)
 			player.update_animation(time_elapsed)
-			player.satisfy_floor_bound(400)
-			player.satisfy_wall_bounds(10, 650)
+			player.satisfy_floor_bound(self.floor)
+			player.satisfy_wall_bounds(self.left_wall, self.right_wall)
 
 		# imcrement the countdown timer
 		self.countdown -= time_elapsed

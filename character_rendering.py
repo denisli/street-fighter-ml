@@ -23,13 +23,13 @@ class SimpleRenderingWrapper(Character):
 		super(SimpleRenderingWrapper, self).do_punch()
 		if self.has_punched:
 			self.image = self.punch_image
-			self.image_timer = self.punch.self_delay
+			self.image_timer = self.punch.self_delay * 9 / 10 # to ensure character puts down arm
 
 	def do_kick(self):
 		super(SimpleRenderingWrapper, self).do_kick()
 		if self.has_kicked:
 			self.image = self.kick_image
-			self.image_timer = self.kick.self_delay
+			self.image_timer = self.kick.self_delay * 9 / 10 # to ensure character puts back leg
 
 	def render(self, screen):
 		if self.facing_right:
