@@ -16,26 +16,37 @@ class Kick:
 		self.enemy_delay = enemy_delay
 		self.push = push
 
-class EnergyBallAttack:
-	def __init__(self, dimension, damage, self_delay, enemy_delay, push, mana_consumption):
-		self.dimension = dimension
-		self.damage = damage
+class EnergyBallAttack(object):
+	def __init__(self, x, y, self_delay, mana_consumption):
+		self.x = x
+		self.y = y
 		self.self_delay = self_delay
-		self.enemy_delay = enemy_delay
-		self.push = push
 		self.mana_consumption = mana_consumption
+
+	def generate_energy_ball(self, owner):
+		raise NotImplementedError("You must implement this in a subclass dude.")
 
 '''
 Even for an energy ball, we represent the ball with a Rectangle bounding box. This makes it easier to compute.
 The figures will be small enough that the player will not notice this anyway.
 '''
-class EnergyBall:
-	def __init__(self, owner, bounding_box, damage, enemy_delay, push):
+class EnergyBall(object):
+	def __init__(self, owner, 
+		bounding_box, facing_right, movement_speed, 
+		damage, enemy_delay, push):
 		self.owner = owner
-		self.bounding_box
+		self.bounding_box = bounding_box
+		self.facing_right = facing_right
+		self.movement_speed = movement_speed
 		self.damage = damage
 		self.enemy_delay = enemy_delay
 		self.push = push
+
+	def update(self, time_elapsed):
+		if self.facing_right:
+			self.bounding_box.x += time_elapsed * self.movement_speed
+		else:
+			self.bounding_box.x -= time_elapsed * self.movement_speed
 
 class Character(object):
 	def __init__(self, name, bounding_box,
@@ -89,8 +100,10 @@ class Character(object):
 
 	def fire_energy_ball(self):
 		if (self.delay == 0):
-			self.has_fired_energy_ball = True
-			self.delay = self.energy_ball_attack.self_delay
+			if (self.mana >= self.energy_ball_attack.mana_consumption):
+				self.has_fired_energy_ball = True
+				self.delay = self.energy_ball_attack.self_delay
+				self.mana -= self.energy_ball_attack.mana_consumption
 
 	def finish_fire_energy_ball(self):
 		self.has_fired_energy_ball = False

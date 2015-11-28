@@ -23,6 +23,8 @@ class Player1Controller(Controller):
 			self.character.do_punch()
 		if key[pygame.K_n]:
 			self.character.do_kick()
+		if key[pygame.K_b]:
+			self.character.fire_energy_ball()
 
 class Player2Controller(Controller):
 	def __init__(self, character):
@@ -40,6 +42,8 @@ class Player2Controller(Controller):
 			self.character.do_punch()
 		if key[pygame.K_f]:
 			self.character.do_kick()
+		if key[pygame.K_h]:
+			self.character.fire_energy_ball()
 
 class GoToLocationController(Controller):
 	def __init__(self, character, physics, brain, location):
@@ -73,18 +77,19 @@ class GoToLocationController(Controller):
 		if self.first_turn:
 			self.first_turn = False
 		else:
-			# any output coordinate >= 0.5 was used, so set it to 1
-			# otherwise set it to 0
-			self.brain.oOutput[ self.brain.oOutput >= self.commitment_threshold ] = 1
-			self.brain.oOutput[ self.brain.oOutput < self.commitment_threshold ] = 0
-			# if we  at same position or further, pretend the correct classification is doing everything else
-			# we must include delay as being further
-			# if we are close enough, however, our classification is correct!
-			if self.previous_absolute_distance_away <= abs(distance) and abs(distance) > 2:
-				self.brain.backward(1-self.brain.oOutput, 1)
-			# otherwise, our classification is considered correct
-			else:
-				self.brain.backward(self.brain.oOutput, 1)
+			# we only need to train if we think we are far away
+			if abs(distance) > 2:
+				# any output coordinate >= 0.5 was used, so set it to 1
+				# otherwise set it to 0
+				self.brain.oOutput[ self.brain.oOutput >= self.commitment_threshold ] = 1
+				self.brain.oOutput[ self.brain.oOutput < self.commitment_threshold ] = 0
+				# if we  at same position or further, pretend the correct classification is doing everything else
+				# we must include delay as being further
+				if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+					self.brain.backward(1-self.brain.oOutput, 1)
+				# otherwise, our classification is considered correct
+				else:
+					self.brain.backward(self.brain.oOutput, 1)
 
 		# set the absolute distance away for use in the next iterations (to tell if we got closer or not)
 		self.previous_absolute_distance_away = abs(distance)

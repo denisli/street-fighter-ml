@@ -43,3 +43,18 @@ class SimpleRenderingWrapper(Character):
 		self.image_timer -= time_elapsed
 		if self.image_timer <= 0:
 			self.image = self.standard_image
+
+class EnergyBallRenderingWrapper(EnergyBall):
+	def __init__(self, energy_ball, image):
+		super(EnergyBallRenderingWrapper, self).__init__(energy_ball.owner,
+			energy_ball.bounding_box, energy_ball.facing_right, energy_ball.movement_speed,
+			energy_ball.damage, energy_ball.enemy_delay, energy_ball.push)
+		self.image = image
+
+	def render(self, screen):
+		if self.facing_right:
+			screen.blit(self.image, (self.bounding_box.x, self.bounding_box.y))
+		else:
+			flipped = pygame.transform.flip(self.image, True, False)
+			location = (self.bounding_box.x - (self.image.get_width() - self.image.get_width()), self.bounding_box.y)
+			screen.blit(flipped, location)

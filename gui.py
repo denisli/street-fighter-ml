@@ -15,6 +15,7 @@ def main():
     color = 255, 255, 255 # this is just white
     screen = pygame.display.set_mode(size)
     
+    energy_ball_image = pygame.image.load('energy_ball.png')
     # initialize the players
     # player 1
     blocky = SimpleRenderingWrapper(Blocky(10, 300), 
@@ -87,6 +88,11 @@ def main():
         player2.render(screen)
         health_bar1.render(screen)
         health_bar2.render(screen)
+
+        # render energy balls
+        for energy_ball in game_objects.energy_balls:
+            renderable_energy_ball = EnergyBallRenderingWrapper(energy_ball, energy_ball_image)
+            renderable_energy_ball.render(screen)
 
         # render the timer
         countdown_label.update_value(str(physics.countdown / 1000))

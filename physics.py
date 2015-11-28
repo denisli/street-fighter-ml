@@ -46,17 +46,40 @@ class SimplePhysics:
 				if player_kick_hits_opponent(player, opponent):
 					opponent.get_damaged(player.kick.damage, player.kick.enemy_delay, player.kick.push)
 				player.finish_kick()
+			if (player.has_fired_energy_ball):
+				energy_ball = player.energy_ball_attack.generate_energy_ball(player)
+				self.game_objects.add_energy_ball(energy_ball)
+				player.finish_fire_energy_ball()
 			player.update_vertical(time_elapsed)
 			player.update_animation(time_elapsed)
 			player.satisfy_floor_bound(self.floor)
 			player.satisfy_wall_bounds(self.left_wall, self.right_wall)
 
-		# imcrement the countdown timer
+		i = 0
+		energy_balls = self.game_objects.energy_balls
+		print len(energy_balls)
+		while i < len(energy_balls):
+			energy_ball = energy_balls[i]
+			if energy_ball.bounding_box.x + energy_ball.bounding_box.width < self.left_wall or \
+			energy_ball.bounding_box.x > self.right_wall:
+				del energy_balls[i]
+			else:
+				# first update the ball
+				energy_ball.update(time_elapsed)
+
+				# next account for it hitting the enemy
+				owner = energy_ball.owner
+				opponent = self.get_opponent(owner)
+				if (ball_player_collision(energy_ball, opponent)):
+					del energy_balls[i]
+					opponent.get_damaged(energy_ball.damage, energy_ball.enemy_delay, energy_ball.push)
+			i += 1
+
+		# increment the countdown timer
 		self.countdown -= time_elapsed
 
 	def world_finished(self):
 		return countdown <= 0
-
 
 	def get_opponent(self, player):
 		if (player == self.game_objects.player1):
