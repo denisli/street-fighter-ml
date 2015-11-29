@@ -6,8 +6,8 @@ class BlockyEnergyBall(EnergyBall):
 	def __init__(self, owner, facing_right, x, y):
 		bounding_box = Rectangle(x, y, 25, 25)
 		super(BlockyEnergyBall, self).__init__(owner,
-			bounding_box, facing_right, 0.8, 
-			20, 600, 15)
+			bounding_box, facing_right, 0.25, 
+			20, 600, 0)
 
 class BlockyEnergyBallAttack(EnergyBallAttack):
 	def __init__(self):

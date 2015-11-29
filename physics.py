@@ -57,7 +57,6 @@ class SimplePhysics:
 
 		i = 0
 		energy_balls = self.game_objects.energy_balls
-		print len(energy_balls)
 		while i < len(energy_balls):
 			energy_ball = energy_balls[i]
 			if energy_ball.bounding_box.x + energy_ball.bounding_box.width < self.left_wall or \

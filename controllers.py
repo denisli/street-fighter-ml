@@ -5,7 +5,7 @@ class Controller(object):
 		self.character = character
 
 	def make_action(self):
-		pass
+		raise NotImplementedError('Implement this in a subclass')
 
 class Player1Controller(Controller):
 	def __init__(self, character):
@@ -103,3 +103,54 @@ class GoToLocationController(Controller):
 
 def get_character_center(character):
 	return character.bounding_box.x + character.bounding_box.width / 2
+
+class NaiveAvoidEnergyBallsController(Controller):
+	def __init__(self, character, physics, brain):
+		super(NaiveAvoidEnergyBallsController, self).__init__(character)
+		'''
+		Our brain is a logistic regression, which decides whether or not the character
+		should jump. The brain will be trained to learn how to avoid energy balls by learning
+		the best time to jump.
+
+		This brain will be trained in an environment in which there may only be at most 
+		1 energy ball fired.
+		'''
+		self.physics = physics
+		self.brain = brain
+		self.training_example_in_progress = False
+		self.already_jumped_for_example = False # ensure that you only jump once per example
+		self.commitment_threshold = 0.5
+		self.jumping_distance = 0 # some stupid initialization
+
+	def make_action(self):
+		# sense that a training example is in progress
+		if len(self.physics.game_objects.energy_balls) > 0:
+			if not self.training_example_in_progress: # new training example
+				self.already_jumped_for_example = False
+				self.training_example_in_progress = True
+
+		# train the logistic regression
+		if self.training_example_in_progress:
+			if self.character.is_hurt: # get hit by energy ball (misclassified)
+				self.brain.train(self.jumping_distance, False)
+				self.training_example_in_progress = False
+				print 'Misclassified :-('
+
+			elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
+				self.brain.train(self.jumping_distance, True)
+				self.training_example_in_progress = False
+				self.commitment_threshold = min(0.525, self.commitment_threshold * 1.01)
+				print 'Yay :-)!'
+
+		if self.training_example_in_progress:
+			# make a decision if you haven't
+			if not self.already_jumped_for_example:
+				energy_ball = self.physics.game_objects.energy_balls[0]
+				distance = min(abs(self.character.bounding_box.x - (energy_ball.bounding_box.x+energy_ball.bounding_box.width)),
+					abs(self.character.bounding_box.x + self.character.bounding_box.width - energy_ball.bounding_box.x))
+				decision = self.brain.predict(distance)
+				print 'probability:', decision
+				if decision >= self.commitment_threshold:
+					self.jumping_distance = distance
+					self.character.jump()
+					self.already_jumped_for_example = True

@@ -110,6 +110,8 @@ class Character(object):
 
 	def wait_delay(self, time_elapsed):
 		self.delay = max(0, self.delay - time_elapsed)
+		if self.delay == 0:
+			self.is_hurt = False
 
 	def get_damaged(self, damage, delay, x_shift):
 		self.health -= damage

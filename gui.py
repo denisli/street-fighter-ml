@@ -1,5 +1,6 @@
 import sys, pygame
 import neural_network as nn
+import single_dimension_logistic_regression as lr
 from shapes import *
 from controllers import *
 from character import *
@@ -26,7 +27,7 @@ def main():
     player1 = blocky
 
     # player 2
-    noob = SimpleRenderingWrapper(Blocky(10, 300),
+    noob = SimpleRenderingWrapper(Blocky(450, 300),
         pygame.image.load('blocky.png'),
         pygame.image.load('blocky-punch.png'),
         pygame.image.load('blocky-kick.png'),
@@ -52,7 +53,8 @@ def main():
     # AI controller
     num_moves = 6 # left, right, jump, punch, kick, and do nothing
     target_location = 600
-    controller2 = GoToLocationController(player2, physics, nn.NeuralNetwork(1, 10, num_moves), target_location)
+    controller2 = NaiveAvoidEnergyBallsController(player2, 
+        physics, lr.SingleDimensionLogisticRegression())
 
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
