@@ -56,6 +56,9 @@ def main():
     controller2 = NaiveAvoidEnergyBallsController(player2, 
         physics, lr.SingleDimensionLogisticRegression())
 
+    # controller2 = GoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(2, 50, 6), 200)
+
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
     clock = pygame.time.Clock()
