@@ -55,6 +55,9 @@ def main():
     controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
         physics, tclr.TriClassSingleDimensionLogisticRegression())
 
+    # controller2 = GoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(2, 50, 6), 200)
+
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
     clock = pygame.time.Clock()
