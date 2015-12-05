@@ -1,6 +1,7 @@
 import sys, pygame
 import neural_network as nn
 import single_dimension_logistic_regression as lr
+import tri_class_single_dimension_logistic_regression as tclr
 from shapes import *
 from controllers import *
 from character import *
@@ -51,10 +52,8 @@ def main():
     #controller2 = Player2Controller(player2)
     
     # AI controller
-    num_moves = 6 # left, right, jump, punch, kick, and do nothing
-    target_location = 600
-    controller2 = NaiveAvoidEnergyBallsController(player2, 
-        physics, lr.SingleDimensionLogisticRegression())
+    controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
+        physics, tclr.TriClassSingleDimensionLogisticRegression())
 
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
@@ -77,6 +76,10 @@ def main():
 
         # update time in the game
         physics.update(time)
+
+        # update the animation of the characters
+        player1.update_animation(time)
+        player2.update_animation(time)
 
         # update displays
         health_bar1.update_value(player1.health)
@@ -102,6 +105,37 @@ def main():
 
         pygame.display.flip()
 
+def autotrain_main():
+    pygame.init()
+
+    player1 = InfiniteManaBlocky(10, 300)
+    player2 = Blocky(450, 300)
+
+    # create game objects container
+    game_objects = GameObjects(player1, player2)
+
+    # establish physics
+    physics = SimplePhysics(game_objects, -0.003)
+
+    # AI controllers
+    controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
+        physics, tclr.TriClassSingleDimensionLogisticRegression())
+
+    milliseconds_per_frame = 10
+    while 1:
+        # handle user input
+        events = pygame.event.get()
+        controller1.make_action()
+        controller2.make_action()
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.display.quit()
+                pygame.quit()
+                sys.exit()
+
+        # update time in the game
+        physics.update(milliseconds_per_frame)
 
 if __name__ == '__main__':
     main()

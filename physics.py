@@ -51,7 +51,6 @@ class SimplePhysics:
 				self.game_objects.add_energy_ball(energy_ball)
 				player.finish_fire_energy_ball()
 			player.update_vertical(time_elapsed)
-			player.update_animation(time_elapsed)
 			player.satisfy_floor_bound(self.floor)
 			player.satisfy_wall_bounds(self.left_wall, self.right_wall)
 

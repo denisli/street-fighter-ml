@@ -151,6 +151,121 @@ class NaiveAvoidEnergyBallsController(Controller):
 				decision = self.brain.predict(distance)
 				print 'probability:', decision
 				if decision >= self.commitment_threshold:
+					print 'jumping distance:', distance
 					self.jumping_distance = distance
 					self.character.jump()
 					self.already_jumped_for_example = True
+
+class EarlynessAwareAvoidEnergyBallsController(Controller):
+	def __init__(self, character, physics, brain):
+		super(EarlynessAwareAvoidEnergyBallsController, self).__init__(character)
+		'''
+		Our brain is a logistic regression, which decides whether or not the character
+		should jump. The brain will be trained to learn how to avoid energy balls by learning
+		the best time to jump.
+
+		This brain will be trained in an environment in which there may only be at most 
+		1 energy ball fired.
+		'''
+		self.physics = physics
+		self.brain = brain
+		self.training_example_in_progress = False
+		self.already_jumped_for_example = False # ensure that you only jump once per example
+		self.jumping_distance = 0 # some stupid initialization
+
+		# variables for giving the bot a chance to learn
+		self.num_times_not_jumped = 0
+		self.make_learning_jump = False # used to force character to have training samples
+
+		# variable for weighing the gains
+		self.correctness_weight = 1.0
+
+	def make_action(self):
+		# sense that a training example is in progress
+		if len(self.physics.game_objects.energy_balls) > 0:
+			if not self.training_example_in_progress: # new training example
+				self.already_jumped_for_example = False
+				self.training_example_in_progress = True
+
+		# train the logistic regression
+		if self.training_example_in_progress:
+			# get hit by energy ball (misclassified)
+			if self.character.is_hurt:
+				# the character did not even bother to jump...
+				if not self.already_jumped_for_example:
+					self.num_times_not_jumped += 1
+					print 'Did not jump for this many times:', self.num_times_not_jumped
+				else: # there is no need to make a learning jump if we tried to jump
+					self.make_learning_jump = False
+				# if the character was early in jumping...
+				if self.already_jumped_for_example and self.character.vertical_speed >= 0:
+					for i in range(10): # put more weight into misclassifications
+						self.brain.train(self.jumping_distance, [1,0,0])
+					print 'Misclassified, too early :-('
+				# if the character was late in jumping
+				else:
+					if self.already_jumped_for_example:
+						for i in range(10): # put more weight into misclassifications
+							self.brain.train(self.jumping_distance, [0,0,1])
+					else:
+						for i in range(10):
+							self.brain.train(0, [0,0,1])
+					print 'Misclassified, too late :-('
+				self.training_example_in_progress = False
+			# managed to avoid ball (correctly classified)
+			elif len(self.physics.game_objects.energy_balls) == 0:
+				self.brain.train(self.jumping_distance, [0,1,0], self.correctness_weight)
+				self.correctness_weight = self.correctness_weight / 1.01
+				self.training_example_in_progress = False
+				print 'Yay :-)!'
+
+		# if a training example is in progress you should decide on what to do
+		if self.training_example_in_progress:
+			# make a decision if you haven't
+			if not self.already_jumped_for_example:
+				energy_ball = self.physics.game_objects.energy_balls[0]
+				distance = min(abs(self.character.bounding_box.x - (energy_ball.bounding_box.x+energy_ball.bounding_box.width)),
+					abs(self.character.bounding_box.x + self.character.bounding_box.width - energy_ball.bounding_box.x))
+				decision = self.brain.predict(distance)
+				# find the maximum index
+				best_index = 2
+				best_probability = decision[2]
+				for i in range(2):
+					if decision[i] > best_probability:
+						best_index = i
+						best_probability = decision[i]
+
+				# if best_index is 1 (just the right time to jump!) then jump
+				if best_index == 1:
+					print 'jumping distance:', distance, ', best_index:', best_index
+					self.jumping_distance = distance
+					self.character.jump()
+					self.already_jumped_for_example = True
+					self.num_times_not_jumped = 0
+				# if the character has not tried to jump for the previous energy ball, force him to want to
+				elif self.num_times_not_jumped >= 1:
+					print 'will try to jump due to lack of interest in jumping :-('
+					self.make_learning_jump = True
+					self.num_times_not_jumped = 0
+				# actually force the character to jump if it senses that it is best_index = 2 (too late to avoid energy ball)
+				if not self.already_jumped_for_example and self.make_learning_jump and best_index == 2:
+					print 'make a learning jump'
+					print 'jumping distance:', distance, ', best_index:', best_index
+					self.jumping_distance = distance
+					self.character.jump()
+					self.already_jumped_for_example = True
+					self.num_times_not_jumped = 0
+
+class AvoidEnergyBallTeacherController(Controller):
+	'''
+	Basically a controller where the character will fire energy balls whenever the enemy has is not hurt
+	and there are no energy balls on the field
+	'''
+	def __init__(self, character, physics):
+		super(AvoidEnergyBallTeacherController, self).__init__(character)
+		self.physics = physics
+
+	def make_action(self):
+		energy_balls = self.physics.game_objects.energy_balls
+		if len(energy_balls) == 0 and self.character.mana >= self.character.energy_ball_attack.mana_consumption and not self.physics.get_opponent(self.character).is_hurt:
+			self.character.fire_energy_ball()

@@ -33,3 +33,42 @@ class Blocky(Character):
 			100.0, 0.01, 100.0, 0.01, 
 			0.3, -0.9, 
 			punch, kick, energy_ball_attack)
+
+'''
+Mimick of the block energy ball. Does not incur any delay or damage or push
+'''
+class MockBlockyEnergyBall(EnergyBall):
+	def __init__(self, owner, facing_right, x, y):
+		bounding_box = Rectangle(x, y, 25, 25)
+		super(MockBlockyEnergyBall, self).__init__(owner,
+			bounding_box, facing_right, 0.25, 
+			0, 0, 0)
+
+'''
+Just a mimick of blocky energy ball attack. It has the same bounding box.
+However, it has no self delay and no mana cost
+'''
+class MockBlockyEnergyBallAttack(EnergyBallAttack):
+	def __init__(self):
+		super(MockBlockyEnergyBallAttack, self).__init__(56, 20, 0, 0)
+
+	def generate_energy_ball(self, owner):
+		if owner.facing_right:
+			return MockBlockyEnergyBall(owner, owner.facing_right, 
+				self.x + owner.bounding_box.x, self.y + owner.bounding_box.y)
+		else:
+			return MockBlockyEnergyBall(owner, owner.facing_right,
+				owner.bounding_box.x - (self.x - owner.bounding_box.width) - 25,
+				owner.bounding_box.y + self.y)
+
+
+class InfiniteManaBlocky(Character):
+	def __init__(self, x, y):
+		punch = Punch(Rectangle(56, 60, 20, 4), 10, 400, 200, 5)
+		kick = Kick(Rectangle(56, 70, 10, 4), 5, 200, 300, 10)
+		energy_ball_attack = MockBlockyEnergyBallAttack()
+		bounding_box = Rectangle(x, y, 56, 77)
+		super(InfiniteManaBlocky, self).__init__('Infinite Mana Blocky', bounding_box, 
+			100.0, 0.01, 100.0, 0.01, 
+			0.3, -0.9, 
+			punch, kick, energy_ball_attack)
