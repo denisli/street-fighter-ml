@@ -325,19 +325,19 @@ class BeatPunchingBagController(Controller):
             # if enemy was not in attack range
             else:
                 # classify correctly if enemy in attack range
-                if abs(self.prev_distance) > abs(distance_from_enemy):
+                if abs(self.prev_distance) - (self.character.delay * 5) > abs(distance_from_enemy):
                     index = np.argmax(self.decision)
                     self.decision[:] = 0
                     self.decision[index] = 1
                     self.brain.backward(self.decision, 1)
-                    print "Classified: Enemy is hurt"
+                    print "Classified: Enemy in attack range"
                 # misclassify if enemy not hurt
                 else:
                     index = np.argmax(self.decision)
                     self.decision[:] = 1
                     self.decision[index] = 0
                     self.brain.backward(self.decision, 1)
-                    print "Misclassified: Enemy is not hurt"
+                    print "Misclassified: Enemy not in attack range"
         
         # get the output from the network based on current state
         self.brain.forward([distance_from_enemy])
