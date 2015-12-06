@@ -62,8 +62,10 @@ class GoToLocationController(Controller):
         self.brain = brain
         self.location = location
 
+        self.decision = None # useless initialization
+
         # mapping from the neural net output to the actual move
-        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: lambda *args: None}
         self.first_turn = True
         self.previous_absolute_distance_away = abs(get_character_center(self.character) - location)
 
@@ -74,32 +76,37 @@ class GoToLocationController(Controller):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
 
-        # train the brain if it is not the first turn (use previous round's results to do thins)
+        # train the brain if it is not the first turn (use previous round's results to do this)
         if self.first_turn:
             self.first_turn = False
         else:
             # we only need to train if we think we are far away
-            if abs(distance) > 2:
+            if abs(distance) >= 3:
                 # any output coordinate >= 0.5 was used, so set it to 1
                 # otherwise set it to 0
-                self.brain.oOutput[ self.brain.oOutput >= self.commitment_threshold ] = 1
-                self.brain.oOutput[ self.brain.oOutput < self.commitment_threshold ] = 0
-                # if we  at same position or further, pretend the correct classification is doing everything else
+                self.decision[ self.decision >= self.commitment_threshold ] = 1
+                self.decision[ self.decision < self.commitment_threshold ] = 0
+                # if we at same position or further, pretend the correct classification is doing everything else
                 # we must include delay as being further
                 if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    self.brain.backward(1-self.brain.oOutput, 1)
+                    self.brain.backward(1-self.decision, 1)
+                    print 'misclassified. distance:', distance
                 # otherwise, our classification is considered correct
                 else:
-                    self.brain.backward(self.brain.oOutput, 1)
+                    self.brain.backward(self.decision, 1)
+                    print 'correctly classified'
+
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
         
         # get the output from the network based on current state
         self.brain.forward([distance])
+        self.decision = np.copy(self.brain.oOutput)
+        print self.decision
         # make the move based on the output
         for i in range(len(self.move_map)):
-            move_inclination = self.brain.oOutput[i][0]
+            move_inclination = self.decision[i][0]
             if move_inclination >= self.commitment_threshold: self.move_map[i]()
 
 def get_character_center(character):
@@ -285,6 +292,7 @@ class BeatPunchingBagController(Controller):
         self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.do_kick, 3: self.character.do_punch, 4: lambda *args: None}
         self.prev_move = [] # useless initialization
         self.prev_distance = 0 # useless initialization
+        self.decision = None # useless initialization
 
     def make_action(self):
         opponent = self.physics.get_opponent(self.character)
@@ -292,6 +300,7 @@ class BeatPunchingBagController(Controller):
         attack_range = min(self.character.punch.bounding_box.width, self.character.kick.bounding_box.width)
         is_in_attack_range = abs(distance_from_enemy) - self.character.bounding_box.width < attack_range
         
+        print distance_from_enemy
         # Do not train if first turn
         if self.first_turn:
             self.first_turn = False
@@ -301,53 +310,43 @@ class BeatPunchingBagController(Controller):
             if self.was_in_attack_range:
                 # classify correctly if enemy is hurt
                 if opponent.is_hurt:
-                    index = np.argmax(self.brain.oOutput)
-                    self.brain.oOutput[:] = 0
-                    self.brain.oOutput[index] = 1
-                    self.brain.backward(self.brain.oOutput, 1)
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 0
+                    self.decision[index] = 1
+                    self.brain.backward(self.decision, 1)
                     print "Classified: Enemy is hurt"
-                    print self.brain.oOutput
-                    print self.prev_move
                 # misclassify if enemy not hurt
                 else:
-                    index = np.argmax(self.brain.oOutput)
-                    self.brain.oOutput[index] = 0
-                    index = np.argmax(self.brain.oOutput)
-                    self.brain.oOutput[:] = 0
-                    self.brain.oOutput[index] = 1
-                    self.brain.backward(self.brain.oOutput, 1)
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 1
+                    self.decision[index] = 0
+                    self.brain.backward(self.decision, 1)
                     print "Misclassified: Enemy is not hurt"
-                    print self.brain.oOutput
-                    print self.prev_move
             # if enemy was not in attack range
             else:
                 # classify correctly if enemy in attack range
-                if is_in_attack_range:
-                    index = np.argmax(self.brain.oOutput)
-                    self.brain.oOutput[:] = 0
-                    self.brain.oOutput[index] = 1
-                    self.brain.backward(self.brain.oOutput, 1)
+                if abs(self.prev_distance) > abs(distance_from_enemy):
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 0
+                    self.decision[index] = 1
+                    self.brain.backward(self.decision, 1)
                     print "Classified: Enemy is hurt"
-                    print self.brain.oOutput
-                    print self.prev_move
                 # misclassify if enemy not hurt
                 else:
-                    index = np.argmax(self.brain.oOutput)
-                    self.brain.oOutput[index] = 0
-                    index = np.argmax(self.brain.oOutput)
-                    self.brain.oOutput[:] = 0
-                    self.brain.oOutput[index] = 1
-                    self.brain.backward(self.brain.oOutput, 1)
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 1
+                    self.decision[index] = 0
+                    self.brain.backward(self.decision, 1)
                     print "Misclassified: Enemy is not hurt"
-                    print self.brain.oOutput
-                    print self.prev_move
         
         # get the output from the network based on current state
         self.brain.forward([distance_from_enemy])
+        self.decision = np.copy(self.brain.oOutput)
+        print self.decision
         # make the move based on the output
-        move_index = np.argmax(self.brain.oOutput)
 
-        self.prev_move = self.brain.oOutput[move_index]
+        move_index = np.argmax(self.decision)
+
         self.prev_distance = distance_from_enemy
         self.was_in_attack_range = is_in_attack_range
         self.move_map[move_index]()

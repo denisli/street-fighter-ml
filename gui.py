@@ -1,6 +1,5 @@
 import sys, pygame
 import neural_network as nn
-import nnets.neuralnet as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
 from shapes import *
@@ -58,7 +57,7 @@ def main():
 
     # AI controller to walk to a certain location
     # controller2 = GoToLocationController(player2, 
-    #     physics, nn.NeuralNetwork(2, 50, 6), 200
+    #     physics, nn.NeuralNetwork(1, 50, 3), 100)
 
     # AI controller to punch a "punching bag"
     controller2 = BeatPunchingBagController(player2, 
