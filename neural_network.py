@@ -8,7 +8,7 @@ from numpy import *
  
 class NeuralNetwork:
      
-    def __init__(self, nIn, nHidden, nOut):
+    def __init__(self, nIn, nHidden, nOut, is_neutral=False):
         # learning rate
         self.alpha = 0.5
                                                  
@@ -18,8 +18,12 @@ class NeuralNetwork:
         self.nOut = nOut
          
         # initialize weights randomly (+1 for bias)
-        self.hWeights = random.random((self.nHidden, self.nIn+1)) - 0.5
-        self.oWeights = random.random((self.nOut, self.nHidden+1)) - 0.5
+        if is_neutral:
+            self.hWeights = zeros((self.nHidden, self.nIn+1))
+            self.oWeights = zeros((self.nOut, self.nHidden+1))
+        else:
+            self.hWeights = random.random((self.nHidden, self.nIn+1)) - 0.5
+            self.oWeights = random.random((self.nOut, self.nHidden+1)) - 0.5
          
         # activations of neurons (sum of inputs)
         self.hActivation = zeros((self.nHidden, 1), dtype=float)
@@ -78,17 +82,17 @@ if __name__ == '__main__':
      
     # define training set
     xorSet = [[0, 0], [0, 1], [1, 0], [1, 1]]
-    xorTeach = [[0], [1], [1], [0]]
+    xorTeach = [ [[0], [1]] , [[1], [0]], [[1], [0]], [[0], [1]] ] 
      
     # create network
-    network = NeuralNetwork(2, 2, 1)
+    network = NeuralNetwork(2, 4, 2, is_neutral=True)
      
     count = 0
     i = 0
-    while(i < 20000):
+    while(i < 60000):
         i += 1
         # choose one training sample at random
-        rnd = random.randint(0,3)
+        rnd = random.randint(0,4)
          
         # forward and backward pass
         network.forward(xorSet[rnd])

@@ -65,7 +65,7 @@ class GoToLocationController(Controller):
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
-        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: lambda *args: None}
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
         self.first_turn = True
         self.previous_absolute_distance_away = abs(get_character_center(self.character) - location)
 
@@ -170,6 +170,57 @@ class SoftmaxGoToLocationController(Controller):
         index = np.argmax(self.decision[0])
         print index
         self.move_map[index]()
+
+class QLearningGoToLocationController(Controller):
+    def __init__(self, character, physics, brain, location):
+        '''
+        For this controller, our brain is a qlearning, which classifies 
+        based on a given state what move to make.
+
+        The qlearning is trained during the game, and will be improved as such.
+
+        The state is decided by:
+        - the distance between character and location
+        '''
+        super(QLearningGoToLocationController, self).__init__(character)
+        self.physics = physics
+        self.brain = brain
+        self.location = location
+
+        self.decision = None # useless initialization
+
+        self.first_turn = True
+        self.prev_state = None # useless initialization
+        self.prev_action = None # useless initialization
+
+        # mapping from the neural net output to the actual move
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
+
+    def make_action(self):
+        # set the inputs into the neural network
+        distance = get_character_center(self.character) - self.location
+        state = [distance]
+
+        if distance < 3:
+            print 'Reached destination!'
+            self.brain.train(self.prev_state, self.prev_action, 10)
+            self.character.bounding_box.x = self.location + 300
+            self.brain.epsilon = self.brain.epsilon / 2
+            return
+
+        if self.first_turn:
+            self.first_turn = False
+        else:
+            future_action = self.brain.get_best_action(state) # future relative to the past
+            future_score = self.brain.get_action_score(state, future_action)
+            self.brain.train(self.prev_state, self.prev_action, future_score / 20.0)
+
+        best_action = self.brain.get_best_action(state, explore=True)
+        print self.brain.get_action_score(state, best_action)
+        self.move_map[best_action]()
+        self.prev_state = state
+        self.prev_action = best_action
+
 
 def get_character_center(character):
     return character.bounding_box.x + character.bounding_box.width / 2

@@ -3,6 +3,7 @@ import neural_network as nn
 #import softmax_neural_network as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
+import qlearning as ql
 from shapes import *
 from controllers import *
 from character import *
@@ -57,8 +58,8 @@ def main():
     #     physics, tclr.TriClassSingleDimensionLogisticRegression())
 
     # AI controller to walk to a certain location
-    controller2 = GoToLocationController(player2, 
-        physics, nn.NeuralNetwork(1, 50, 3), 100)
+    controller2 = QLearningGoToLocationController(player2, 
+        physics, ql.QLearning(1, 50, 6), 100)
   
     # Softmax AI controller to walk to a certain location
     # controller2 = SoftmaxGoToLocationController(player2, 
@@ -131,9 +132,9 @@ def autotrain_main():
     physics = SimplePhysics(game_objects, -0.003)
 
     # AI controllers
-    controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
-        physics, tclr.TriClassSingleDimensionLogisticRegression())
+    controller1 = Player1Controller(player1)
+    controller2 = QLearningGoToLocationController(player2, 
+        physics, ql.QLearning(1, 50, 6), 100)
 
     milliseconds_per_frame = 10
     while 1:
