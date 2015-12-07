@@ -82,14 +82,10 @@ class GoToLocationController(Controller):
         else:
             # we only need to train if we think we are far away
             if abs(distance) >= 3:
-                # any output coordinate >= 0.5 was used, so set it to 1
-                # otherwise set it to 0
-                self.decision[ self.decision >= self.commitment_threshold ] = 1
-                self.decision[ self.decision < self.commitment_threshold ] = 0
                 # if we at same position or further, pretend the correct classification is doing everything else
                 # we must include delay as being further
                 if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    self.brain.backward(1-self.decision, 1)
+                    self.brain.backward(self.decision, -1)
                     print 'misclassified. distance:', distance
                 # otherwise, our classification is considered correct
                 else:
@@ -105,13 +101,10 @@ class GoToLocationController(Controller):
         self.decision = np.copy(self.brain.oOutput)
         print self.decision
         # make the move based on the output
-        count = 0
-        while count < 100:
-            count += 1
-            i = np.random.randint(0, len(self.move_map))
-            if self.decision[i][0] >= self.commitment_threshold:
-                self.move_map[i]()
-                break
+        index = np.argmax(self.decision)
+        self.decision[:][0] = 0
+        self.decision[index][0] = 1
+        self.move_map[index]()
 
 class SoftmaxGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
