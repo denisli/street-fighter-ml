@@ -1,5 +1,6 @@
 import sys, pygame
 import neural_network as nn
+import softmax_neural_network as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
 from shapes import *
@@ -58,10 +59,14 @@ def main():
     # AI controller to walk to a certain location
     # controller2 = GoToLocationController(player2, 
     #     physics, nn.NeuralNetwork(1, 50, 3), 100)
+  
+    # Softmax AI controller to walk to a certain location
+    # controller2 = SoftmaxGoToLocationController(player2, 
+    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
 
     # AI controller to punch a "punching bag"
-    controller2 = BeatPunchingBagController(player2, 
-        physics, nn.NeuralNetwork(1, 10, 5))
+    # controller2 = BeatPunchingBagController(player2, 
+    #     physics, nn.NeuralNetwork(1, 10, 5))
     
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
