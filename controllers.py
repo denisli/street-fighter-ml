@@ -295,6 +295,7 @@ class BeatPunchingBagController(Controller):
         self.decision = None # useless initialization
 
     def make_action(self):
+        if self.character.delay > 0: return
         opponent = self.physics.get_opponent(self.character)
         distance_from_enemy = self.character.bounding_box.x - opponent.bounding_box.x
         attack_range = min(self.character.punch.bounding_box.width, self.character.kick.bounding_box.width)
