@@ -125,7 +125,7 @@ class AllMovesGoToLocationController(Controller):
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
-        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: self.character.fire_energy_ball, 6: lambda *args: None}
         self.first_turn = True
         self.previous_absolute_distance_away = abs(get_character_center(self.character) - location)
 
@@ -168,7 +168,7 @@ class AllMovesGoToLocationController(Controller):
 
 class TwoMoveSoftmaxGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
-        super(SoftmaxGoToLocationController, self).__init__(character)
+        super(TwoMoveSoftmaxGoToLocationController, self).__init__(character)
         '''
         For this controller, our brain is a neural network, which classifies 
         based on a given state what move to make.
@@ -194,9 +194,7 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         distance = get_character_center(self.character) - self.location
 
         # train the brain if it is not the first turn (use previous round's results to do this)
-        if self.first_turn:
-            self.first_turn = False
-        else:
+        if not self.first_turn:
             # we only need to train if we think we are far away
             if abs(distance) >= 0:
                 # any output coordinate >= 0.5 was used, so set it to 1
@@ -221,14 +219,83 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_distance_away = distance
         
-        # get the output from the network based on current state
-        self.decision = self.brain.predict(np.array([[distance]]))
+        if self.first_turn:
+            self.first_turn = False
+            index = np.random.randint(0, len(self.move_map))
+            self.decision = np.array([[0 for i in range(len(self.move_map))]])
+            self.decision[0][index] = 1
+        else:
+            # get the output from the network based on current state
+            self.decision = self.brain.predict(np.array([[distance]]))
         
         index = np.argmax(self.decision[0])
         print index
         self.move_map[index]()
 
+class AllMovesSoftmaxGoToLocationController(Controller):
+    def __init__(self, character, physics, brain, location):
+        super(AllMovesSoftmaxGoToLocationController, self).__init__(character)
+        '''
+        For this controller, our brain is a neural network, which classifies 
+        based on a given state what move to make.
 
+        The neural network is trained during the game, and will be improved as such.
+
+        The state is decided by:
+        - the distance between character and location
+        '''
+        self.physics = physics
+        self.brain = brain
+        self.location = location
+
+        self.decision = None # useless initialization
+
+        # mapping from the neural net output to the actual move
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
+        self.first_turn = True
+        self.previous_distance_away = get_character_center(self.character) - location
+
+    def make_action(self):
+        # set the inputs into the neural network
+        distance = get_character_center(self.character) - self.location
+
+        # train the brain if it is not the first turn (use previous round's results to do this)
+        if not self.first_turn:
+            # we only need to train if we think we are far away
+            if abs(distance) >= 0:
+                # any output coordinate >= 0.5 was used, so set it to 1
+                # otherwise set it to 0
+                # if we at same position or further, pretend the correct classification is doing everything else
+                # we must include delay as being further
+                if abs(self.previous_distance_away) <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                    index = np.argmax(self.decision[0])
+                    self.decision = np.array([[0 for i in range(len(self.move_map))]])
+                    i = index
+                    while i == index:
+                        i = np.random.randint(0, len(self.move_map))
+                    self.decision[0][i] = 1
+                    self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
+                    print 'misclassified. distance:', distance
+                # otherwise, our classification is considered correct
+                else:
+                    self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
+                    print 'correctly classified'
+
+        # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
+        self.previous_distance_away = distance
+        
+        if self.first_turn:
+            self.first_turn = False
+            index = np.random.randint(0, len(self.move_map))
+            self.decision = np.array([[0 for i in range(len(self.move_map))]])
+            self.decision[0][index] = 1
+        else:
+            # get the output from the network based on current state
+            self.decision = self.brain.predict(np.array([[distance]]))
+        
+        index = np.argmax(self.decision[0])
+        print index
+        self.move_map[index]()
 
 class QLearningGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):

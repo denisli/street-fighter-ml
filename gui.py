@@ -48,22 +48,30 @@ def main():
     health_bar2 = HealthBar(400, 50, 100)
 
     # player 1 controller
-    controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    # controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    controller1 = Player1Controller(player1)
 
     # player 2 controller
-    #controller2 = Player2Controller(player2)
+    # controller2 = Player2Controller(player2)
     
     # AI controller to avoid energy balls
     # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
     #     physics, tclr.TriClassSingleDimensionLogisticRegression())
 
-    # AI controller to walk to a certain location
     # controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
     #    physics, nn.NeuralNetwork(1, 50, 2))
+
+    # AI controller to walk to a certain location
+    controller2 = AllMovesGoToLocationController(player2, 
+        physics, nn.NeuralNetwork(1, 50, 7), 200)
   
-    # Softmax AI controller to walk to a certain location
-    controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
-        physics, smnn.SoftmaxNeuralNetwork(), 200)
+    # Two Move Softmax AI controller to walk to a certain location
+    # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
+    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
+
+    # All Moves Softmax AI controller to walk to a certain location
+    # controller2 = AllMovesSoftmaxGoToLocationController(player2, 
+    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
 
     # AI controller to punch a "punching bag"
     # controller2 = BeatPunchingBagController(player2, 
