@@ -1,6 +1,6 @@
 import sys, pygame
 import neural_network as nn
-import softmax_neural_network as smnn
+#import softmax_neural_network as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
 import qlearning as ql
@@ -46,6 +46,8 @@ def main():
     # health bars
     health_bar1 = HealthBar(50, 50, 100)
     health_bar2 = HealthBar(400, 50, 100)
+    mana_bar1 = ManaBar(50, 100, 100)
+    mana_bar2 = ManaBar(400, 100, 100)
 
     # player 1 controller
     # controller1 = AvoidEnergyBallTeacherController(player1, physics)
@@ -106,6 +108,8 @@ def main():
         # update displays
         health_bar1.update_value(player1.health)
         health_bar2.update_value(player2.health)
+        mana_bar1.update_value(player1.mana)
+        mana_bar2.update_value(player2.mana)
 
         # render background
         screen.fill(color)
@@ -115,6 +119,8 @@ def main():
         player2.render(screen)
         health_bar1.render(screen)
         health_bar2.render(screen)
+        mana_bar1.render(screen)
+        mana_bar2.render(screen)
 
         # render energy balls
         for energy_ball in game_objects.energy_balls:

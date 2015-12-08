@@ -25,3 +25,10 @@ class HealthBar(LinearScaleBar):
 		height = 40
 		color = (255, 0, 0)
 		super(HealthBar, self).__init__(x, y, width, height, color, max_health, max_health)
+
+class ManaBar(LinearScaleBar):
+	def __init__(self, x, y, max_mana):
+		width = 200
+		height = 40
+		color = (0, 0, 255)
+		super(ManaBar, self).__init__(x, y, width, height, color, max_mana, max_mana)
