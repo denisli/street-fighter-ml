@@ -48,7 +48,7 @@ def main():
     health_bar2 = HealthBar(400, 50, 100)
 
     # player 1 controller
-    controller1 = Player1Controller(player1)
+    controller1 = AvoidEnergyBallTeacherController(player1, physics)
 
     # player 2 controller
     #controller2 = Player2Controller(player2)
@@ -58,8 +58,8 @@ def main():
     #     physics, tclr.TriClassSingleDimensionLogisticRegression())
 
     # AI controller to walk to a certain location
-    controller2 = QLearningGoToLocationController(player2, 
-        physics, ql.QLearning(1, 50, 6), 100)
+    controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
+        physics, nn.NeuralNetwork(1, 50, 2))
   
     # Softmax AI controller to walk to a certain location
     # controller2 = SoftmaxGoToLocationController(player2, 
@@ -132,9 +132,9 @@ def autotrain_main():
     physics = SimplePhysics(game_objects, -0.003)
 
     # AI controllers
-    controller1 = Player1Controller(player1)
-    controller2 = QLearningGoToLocationController(player2, 
-        physics, ql.QLearning(1, 50, 6), 100)
+    controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
+        physics, nn.NeuralNetwork(1, 50, 2))
 
     milliseconds_per_frame = 10
     while 1:

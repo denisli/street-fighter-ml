@@ -200,7 +200,7 @@ class QLearningGoToLocationController(Controller):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
         state = [distance]
-
+        print 'distance:', distance
         if distance < 3:
             print 'Reached destination!'
             self.brain.train(self.prev_state, self.prev_action, 10)
@@ -376,6 +376,104 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
                     self.character.jump()
                     self.already_jumped_for_example = True
                     self.num_times_not_jumped = 0
+
+class NeuralNetworkAvoidEnergyBallsController(Controller):
+    def __init__(self, character, physics, brain):
+        super(NeuralNetworkAvoidEnergyBallsController, self).__init__(character)
+        self.physics = physics
+        self.brain = brain
+        self.training_example_in_progress = False
+        self.already_jumped_for_example = False
+        self.jumping_distance = 0
+
+    def make_action(self):
+        # sense that a training example is in progress
+        if len(self.physics.game_objects.energy_balls) > 0:
+            if not self.training_example_in_progress: # new training example
+                self.already_jumped_for_example = False
+                self.training_example_in_progress = True
+
+        # train the logistic regression
+        if self.training_example_in_progress:
+            if self.character.is_hurt: # get hit by energy ball (misclassified)
+                self.brain.backward(1-self.decision, 1)
+                print 'this damn thing', 1 - self.decision
+                self.training_example_in_progress = False
+                print 'Misclassified :-('
+
+            elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
+                self.brain.backward(self.decision, 1)
+                self.training_example_in_progress = False
+                print 'Yay :-)!'
+
+        if self.training_example_in_progress:
+            # make a decision if you haven't
+            if not self.already_jumped_for_example:
+                energy_ball = self.physics.game_objects.energy_balls[0]
+                distance = min(abs(self.character.bounding_box.x - (energy_ball.bounding_box.x+energy_ball.bounding_box.width)),
+                    abs(self.character.bounding_box.x + self.character.bounding_box.width - energy_ball.bounding_box.x))
+                # get the output from the network based on current state
+                self.brain.forward([distance])
+                self.decision = np.copy(self.brain.oOutput)
+                print self.decision
+                # make the move based on the output
+                index = np.argmax(self.decision)
+                self.decision[:] = [0]
+                self.decision[index] = [1]
+                print 'decision:', self.decision
+                if self.decision[1][0] == 1:
+                    self.character.jump()
+                    self.already_jumped_for_example = True
+
+class QLearningAvoidEnergyBallsController(Controller):
+    def __init__(self, character, physics, brain):
+        super(QLearningAvoidEnergyBallsController, self).__init__(character)
+        self.physics = physics
+        self.brain = brain
+        self.training_example_in_progress = False
+        self.already_jumped_for_example = False # ensure that you only jump once per example
+        self.jumping_distance = 0 # some stupid initialization
+
+    def make_action(self):
+        # sense that a training example is in progress
+        if len(self.physics.game_objects.energy_balls) > 0:
+            if not self.training_example_in_progress: # new training example
+                self.already_jumped_for_example = False
+                self.training_example_in_progress = True
+
+        # train the logistic regression
+        if self.training_example_in_progress:
+            state = [self.jumping_distance]
+            if self.character.is_hurt: # get hit by energy ball (misclassified)
+                if self.already_jumped_for_example:
+                    self.brain.train(state, 1, -1)
+                    self.brain.epsilon = self.brain.epsilon / 2
+                    self.training_example_in_progress = False
+                    print 'Misclassified, jumped incorrectly :-('
+                else:
+                    self.brain.train([0], 0, -1)
+                    self.brain.epsilon = self.brain.epsilon / 2
+                    self.training_example_in_progress = False
+                    print 'Misclassified, did not jump at all :-('
+
+            elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
+                self.brain.train(state, 1, 1)
+                self.brain.epsilon = self.brain.epsilon / 2
+                self.training_example_in_progress = False
+                print 'Yay :-)!'
+
+        if self.training_example_in_progress:
+            # make a decision if you haven't
+            if not self.already_jumped_for_example:
+                energy_ball = self.physics.game_objects.energy_balls[0]
+                distance = min(abs(self.character.bounding_box.x - (energy_ball.bounding_box.x+energy_ball.bounding_box.width)),
+                    abs(self.character.bounding_box.x + self.character.bounding_box.width - energy_ball.bounding_box.x))
+                state = [distance]
+                action = self.brain.get_best_action(state, explore=True)
+                print 'action score:', self.brain.get_action_score(state, action)
+                if action == 1:
+                    self.character.jump()
+                    self.already_jumped_for_example = True
 
 class AvoidEnergyBallTeacherController(Controller):
     '''
