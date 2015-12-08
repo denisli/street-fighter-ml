@@ -13,6 +13,8 @@ from physics import *
 from bars import *
 from gui_components import *
 
+import pickle
+
 def main():
     pygame.init()
     size = (width, height) = (720, 480)
@@ -50,22 +52,25 @@ def main():
     mana_bar2 = ManaBar(400, 100, 100)
 
     # player 1 controller
-    # controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller1 = Player1Controller(player1)
+    controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    #controller1 = Player1Controller(player1)
 
     # player 2 controller
     # controller2 = Player2Controller(player2)
     
     # AI controller to avoid energy balls
-    # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
-    #     physics, tclr.TriClassSingleDimensionLogisticRegression())
+    controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
+       physics, tclr.TriClassSingleDimensionLogisticRegression())
+
+    # controller2 = NaiveAvoidEnergyBallsController(player2, 
+    #    physics, lr.SingleDimensionLogisticRegression())
 
     # controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
     #    physics, nn.NeuralNetwork(1, 50, 2))
 
     # AI controller to walk to a certain location
-    controller2 = AllMovesGoToLocationController(player2, 
-        physics, nn.NeuralNetwork(1, 50, 7), 200)
+    # controller2 = AllMovesNaiveGoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(1, 50, 7), 200)
   
     # Two Move Softmax AI controller to walk to a certain location
     # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
@@ -131,6 +136,10 @@ def main():
         countdown_label.update_value(str(physics.countdown / 1000))
         countdown_label.render(screen)
 
+        key = pygame.key.get_pressed()
+        if key[pygame.K_p]:
+            pickle.dump('brain')
+
         pygame.display.flip()
 
 def autotrain_main():
@@ -147,10 +156,11 @@ def autotrain_main():
 
     # AI controllers
     controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
-        physics, nn.NeuralNetwork(1, 50, 2))
+    controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
+         physics, tclr.TriClassSingleDimensionLogisticRegression())
 
     milliseconds_per_frame = 10
+    f = open('brain.pkl', 'w')
     while 1:
         # handle user input
         events = pygame.event.get()
@@ -166,4 +176,4 @@ def autotrain_main():
         physics.update(milliseconds_per_frame)
 
 if __name__ == '__main__':
-    main()
+    autotrain_main()

@@ -46,6 +46,127 @@ class Player2Controller(Controller):
         if key[pygame.K_h]:
             self.character.fire_energy_ball()
 
+class TwoMoveNaiveGoToLocationController(Controller):
+    def __init__(self, character, physics, brain, location):
+        super(TwoMoveNaiveGoToLocationController, self).__init__(character)
+        '''
+        For this controller, our brain is a neural network, which classifies 
+        based on a given state what move to make.
+
+        The neural network is trained during the game, and will be improved as such.
+
+        The state is decided by:
+        - the distance between character and location
+        '''
+        self.physics = physics
+        self.brain = brain
+        self.location = location
+
+        self.decision = None # useless initialization
+
+        # mapping from the neural net output to the actual move
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: lambda *args: None}
+        self.previous_absolute_distance_away = abs(get_character_center(self.character) - location)
+        self.first_turn = True
+
+        # threshold for committing to a move
+        self.commitment_threshold = 0.5
+
+    def make_action(self):
+        # set the inputs into the neural network
+        distance = get_character_center(self.character) - self.location
+
+        # train the brain if it is not the first turn (use previous round's results to do this)
+        if self.first_turn:
+            self.first_turn = False
+        else:
+            # we only need to train if we think we are far away
+            if abs(distance) >= 3:
+                # if we at same position or further, pretend the correct classification is doing everything else
+                # we must include delay as being further
+                if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                    self.brain.backward(1-self.decision, 1)
+                    print 'misclassified. distance:', distance
+                # otherwise, our classification is considered correct
+                else:
+                    self.brain.backward(self.decision, 1)
+                    print 'correctly classified'
+
+
+        # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
+        self.previous_absolute_distance_away = abs(distance)
+        
+        # get the output from the network based on current state
+        self.brain.forward([distance])
+        self.decision = np.copy(self.brain.oOutput)
+        print self.decision
+        # make the move based on the output
+        index = np.argmax(self.decision)
+        self.decision[:][0] = 0
+        self.decision[index][0] = 1
+        self.move_map[index]()
+
+class AllMovesNaiveGoToLocationController(Controller):
+    def __init__(self, character, physics, brain, location):
+        super(AllMovesNaiveGoToLocationController, self).__init__(character)
+        '''
+        For this controller, our brain is a neural network, which classifies 
+        based on a given state what move to make.
+
+        The neural network is trained during the game, and will be improved as such.
+
+        The state is decided by:
+        - the distance between character and location
+        '''
+        self.physics = physics
+        self.brain = brain
+        self.location = location
+
+        self.decision = None # useless initialization
+
+        # mapping from the neural net output to the actual move
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: self.character.fire_energy_ball, 6: lambda *args: None}
+        self.first_turn = True
+        self.previous_absolute_distance_away = abs(get_character_center(self.character) - location)
+
+        # threshold for committing to a move
+        self.commitment_threshold = 0.5
+
+    def make_action(self):
+        # set the inputs into the neural network
+        distance = get_character_center(self.character) - self.location
+
+        # train the brain if it is not the first turn (use previous round's results to do this)
+        if self.first_turn:
+            self.first_turn = False
+        else:
+            # we only need to train if we think we are far away
+            if abs(distance) >= 3:
+                # if we at same position or further, pretend the correct classification is doing everything else
+                # we must include delay as being further
+                if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                    self.brain.backward(1-self.decision, 1)
+                    print 1 - self.decision
+                    print 'misclassified. distance:', distance
+                # otherwise, our classification is considered correct
+                else:
+                    self.brain.backward(self.decision, 1)
+                    print 'correctly classified'
+
+
+        # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
+        self.previous_absolute_distance_away = abs(distance)
+        
+        # get the output from the network based on current state
+        self.brain.forward([distance])
+        self.decision = np.copy(self.brain.oOutput)
+        print self.decision
+        # make the move based on the output
+        index = np.argmax(self.decision)
+        self.decision[:][0] = 0
+        self.decision[index][0] = 1
+        self.move_map[index]()
+
 class TwoMoveGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
         super(TwoMoveGoToLocationController, self).__init__(character)
@@ -65,7 +186,7 @@ class TwoMoveGoToLocationController(Controller):
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
-        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: lambda *args: None}
         self.first_turn = True
         self.previous_absolute_distance_away = abs(get_character_center(self.character) - location)
 
@@ -251,7 +372,7 @@ class AllMovesSoftmaxGoToLocationController(Controller):
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
-        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: self.character.fire_energy_ball, 6: lambda *args: None}
         self.first_turn = True
         self.previous_distance_away = get_character_center(self.character) - location
 
@@ -386,7 +507,7 @@ class NaiveAvoidEnergyBallsController(Controller):
             elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
                 self.brain.train(self.jumping_distance, True)
                 self.training_example_in_progress = False
-                self.commitment_threshold = min(0.525, self.commitment_threshold * 1.01)
+                self.commitment_threshold = min(0.9, self.commitment_threshold * 1.1)
                 print 'Yay :-)!'
 
         if self.training_example_in_progress:
@@ -512,6 +633,8 @@ class NeuralNetworkAvoidEnergyBallsController(Controller):
         self.already_jumped_for_example = False
         self.jumping_distance = 0
 
+        self.correctness_weight = 1.0
+
     def make_action(self):
         # sense that a training example is in progress
         if len(self.physics.game_objects.energy_balls) > 0:
@@ -522,13 +645,13 @@ class NeuralNetworkAvoidEnergyBallsController(Controller):
         # train the logistic regression
         if self.training_example_in_progress:
             if self.character.is_hurt: # get hit by energy ball (misclassified)
-                self.brain.backward(1-self.decision, 1)
-                print 'this damn thing', 1 - self.decision
+                self.brain.backward(self.decision, -1)
                 self.training_example_in_progress = False
                 print 'Misclassified :-('
 
             elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
-                self.brain.backward(self.decision, 1)
+                self.brain.backward(self.decision, self.correctness_weight)
+                self.correctness_weight# = self.correctness_weight / 1.01
                 self.training_example_in_progress = False
                 print 'Yay :-)!'
 
