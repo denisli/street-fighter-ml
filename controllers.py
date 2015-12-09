@@ -8,6 +8,9 @@ class Controller(object):
     def make_action(self):
         raise NotImplementedError('Implement this in a subclass')
 
+    def stop_training(self):
+        raise NotImplementedError('Implement this in a subclass')
+
 class Player1Controller(Controller):
     def __init__(self, character):
         super(Player1Controller, self).__init__(character)
@@ -27,6 +30,9 @@ class Player1Controller(Controller):
         if key[pygame.K_b]:
             self.character.fire_energy_ball()
 
+    def stop_training(self):
+        pass
+
 class Player2Controller(Controller):
     def __init__(self, character):
         super(Player2Controller, self).__init__(character)
@@ -45,6 +51,9 @@ class Player2Controller(Controller):
             self.character.do_kick()
         if key[pygame.K_h]:
             self.character.fire_energy_ball()
+
+    def stop_training(self):
+        pass
 
 class TwoMoveNaiveGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
@@ -72,6 +81,8 @@ class TwoMoveNaiveGoToLocationController(Controller):
         # threshold for committing to a move
         self.commitment_threshold = 0.5
 
+        self.training_stopped = False
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
@@ -81,16 +92,17 @@ class TwoMoveNaiveGoToLocationController(Controller):
             self.first_turn = False
         else:
             # we only need to train if we think we are far away
-            if abs(distance) >= 3:
-                # if we at same position or further, pretend the correct classification is doing everything else
-                # we must include delay as being further
-                if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    self.brain.backward(1-self.decision, 1)
-                    print 'misclassified. distance:', distance
-                # otherwise, our classification is considered correct
-                else:
-                    self.brain.backward(self.decision, 1)
-                    print 'correctly classified'
+            if not self.training_stopped:
+                if abs(distance) >= 3:
+                    # if we at same position or further, pretend the correct classification is doing everything else
+                    # we must include delay as being further
+                    if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                        self.brain.backward(1-self.decision, 1)
+                        print 'misclassified. distance:', distance
+                    # otherwise, our classification is considered correct
+                    else:
+                        self.brain.backward(self.decision, 1)
+                        print 'correctly classified'
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -105,6 +117,9 @@ class TwoMoveNaiveGoToLocationController(Controller):
         self.decision[:][0] = 0
         self.decision[index][0] = 1
         self.move_map[index]()
+
+    def stop_training(self):
+        self.training_stopped = True
 
 class AllMovesNaiveGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
@@ -132,6 +147,8 @@ class AllMovesNaiveGoToLocationController(Controller):
         # threshold for committing to a move
         self.commitment_threshold = 0.5
 
+        self.training_stopped = False
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
@@ -141,17 +158,18 @@ class AllMovesNaiveGoToLocationController(Controller):
             self.first_turn = False
         else:
             # we only need to train if we think we are far away
-            if abs(distance) >= 3:
-                # if we at same position or further, pretend the correct classification is doing everything else
-                # we must include delay as being further
-                if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    self.brain.backward(1-self.decision, 1)
-                    print 1 - self.decision
-                    print 'misclassified. distance:', distance
-                # otherwise, our classification is considered correct
-                else:
-                    self.brain.backward(self.decision, 1)
-                    print 'correctly classified'
+            if not self.training_stopped:
+                if abs(distance) >= 3:
+                    # if we at same position or further, pretend the correct classification is doing everything else
+                    # we must include delay as being further
+                    if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                        self.brain.backward(1-self.decision, 1)
+                        print 1 - self.decision
+                        print 'misclassified. distance:', distance
+                    # otherwise, our classification is considered correct
+                    else:
+                        self.brain.backward(self.decision, 1)
+                        print 'correctly classified'
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -166,6 +184,9 @@ class AllMovesNaiveGoToLocationController(Controller):
         self.decision[:][0] = 0
         self.decision[index][0] = 1
         self.move_map[index]()
+
+    def stop_training(self):
+        self.training_stopped = True
 
 class TwoMoveGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
@@ -193,6 +214,8 @@ class TwoMoveGoToLocationController(Controller):
         # threshold for committing to a move
         self.commitment_threshold = 0.5
 
+        self.training_stopped = False
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
@@ -202,16 +225,17 @@ class TwoMoveGoToLocationController(Controller):
             self.first_turn = False
         else:
             # we only need to train if we think we are far away
-            if abs(distance) >= 3:
-                # if we at same position or further, pretend the correct classification is doing everything else
-                # we must include delay as being further
-                if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    self.brain.backward(self.decision, -1)
-                    print 'misclassified. distance:', distance
-                # otherwise, our classification is considered correct
-                else:
-                    self.brain.backward(self.decision, 1)
-                    print 'correctly classified'
+            if not self.training_stopped:
+                if abs(distance) >= 3:
+                    # if we at same position or further, pretend the correct classification is doing everything else
+                    # we must include delay as being further
+                    if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                        self.brain.backward(self.decision, -1)
+                        print 'misclassified. distance:', distance
+                    # otherwise, our classification is considered correct
+                    else:
+                        self.brain.backward(self.decision, 1)
+                        print 'correctly classified'
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -226,6 +250,9 @@ class TwoMoveGoToLocationController(Controller):
         self.decision[:][0] = 0
         self.decision[index][0] = 1
         self.move_map[index]()
+
+    def stop_training(self):
+        self.training_stopped = True
 
 class AllMovesGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
@@ -253,6 +280,8 @@ class AllMovesGoToLocationController(Controller):
         # threshold for committing to a move
         self.commitment_threshold = 0.5
 
+        self.training_stopped = False
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
@@ -262,16 +291,17 @@ class AllMovesGoToLocationController(Controller):
             self.first_turn = False
         else:
             # we only need to train if we think we are far away
-            if abs(distance) >= 3:
-                # if we at same position or further, pretend the correct classification is doing everything else
-                # we must include delay as being further
-                if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    self.brain.backward(self.decision, -1)
-                    print 'misclassified. distance:', distance
-                # otherwise, our classification is considered correct
-                else:
-                    self.brain.backward(self.decision, 1)
-                    print 'correctly classified'
+            if not self.training_stopped:
+                if abs(distance) >= 3:
+                    # if we at same position or further, pretend the correct classification is doing everything else
+                    # we must include delay as being further
+                    if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                        self.brain.backward(self.decision, -1)
+                        print 'misclassified. distance:', distance
+                    # otherwise, our classification is considered correct
+                    else:
+                        self.brain.backward(self.decision, 1)
+                        print 'correctly classified'
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -286,6 +316,9 @@ class AllMovesGoToLocationController(Controller):
         self.decision[:][0] = 0
         self.decision[index][0] = 1
         self.move_map[index]()
+
+    def stop_training(self):
+        self.training_stopped = True
 
 class TwoMoveSoftmaxGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
@@ -310,6 +343,8 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         self.first_turn = True
         self.previous_distance_away = get_character_center(self.character) - location
 
+        self.training_stopped = False
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
@@ -317,24 +352,25 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         # train the brain if it is not the first turn (use previous round's results to do this)
         if not self.first_turn:
             # we only need to train if we think we are far away
-            if abs(distance) >= 0:
-                # any output coordinate >= 0.5 was used, so set it to 1
-                # otherwise set it to 0
-                # if we at same position or further, pretend the correct classification is doing everything else
-                # we must include delay as being further
-                if abs(self.previous_distance_away) <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                    index = np.argmax(self.decision[0])
-                    self.decision = np.array([[0 for i in range(len(self.move_map))]])
-                    i = index
-                    while i == index:
-                        i = np.random.randint(0, len(self.move_map))
-                    self.decision[0][i] = 1
-                    self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
-                    print 'misclassified. distance:', distance
-                # otherwise, our classification is considered correct
-                else:
-                    self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
-                    print 'correctly classified'
+            if not self.training_stopped:
+                if abs(distance) >= 0:
+                    # any output coordinate >= 0.5 was used, so set it to 1
+                    # otherwise set it to 0
+                    # if we at same position or further, pretend the correct classification is doing everything else
+                    # we must include delay as being further
+                    if abs(self.previous_distance_away) <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
+                        index = np.argmax(self.decision[0])
+                        self.decision = np.array([[0 for i in range(len(self.move_map))]])
+                        i = index
+                        while i == index:
+                            i = np.random.randint(0, len(self.move_map))
+                        self.decision[0][i] = 1
+                        self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
+                        print 'misclassified. distance:', distance
+                    # otherwise, our classification is considered correct
+                    else:
+                        self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
+                        print 'correctly classified'
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -352,6 +388,9 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         index = np.argmax(self.decision[0])
         print index
         self.move_map[index]()
+
+    def stop_training(self):
+        self.training_stopped = True
 
 class AllMovesSoftmaxGoToLocationController(Controller):
     def __init__(self, character, physics, brain, location):
