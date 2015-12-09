@@ -180,6 +180,8 @@ def autotrain_main():
     controller1 = AvoidEnergyBallTeacherController(player1, physics)
     # controller2 = AvoidVariableSpeedEnergyBallsController(player2,
     #     physics, tctdlr.TriClassTwoDimensionLogisticRegression())
+    # controller2 = AllMovesSoftmaxGoToLocationController(player2, 
+    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
     # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
     #     physics, smnn.SoftmaxNeuralNetwork(), 200)
     # controller2 = AllMovesNaiveGoToLocationController(player2, 

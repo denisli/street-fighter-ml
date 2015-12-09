@@ -96,8 +96,13 @@ class TwoMoveNaiveGoToLocationController(Controller):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
         if self.classification_count > 100:
-            plt.plot(self.xclassified, self.classified, 'go')
-            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            classified_pts, = plt.plot(self.xclassified, self.classified, 'go')
+            misclassified_pts, = plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.rcParams['legend.numpoints'] = 1
+            plt.legend([classified_pts, misclassified_pts], ['Correctly classified', 'Misclassified'])
+            plt.title('2-Move Neural Network with Opposite Decision Misclassification [Walking Task]')
+            plt.xlabel('Iteration Number')
+            plt.ylabel('Distance from Target (px)')
             plt.show()
             self.count = -100
 
@@ -189,8 +194,13 @@ class AllMovesNaiveGoToLocationController(Controller):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
         if self.classification_count > 100:
-            plt.plot(self.xclassified, self.classified, 'go')
-            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            classified_pts, = plt.plot(self.xclassified, self.classified, 'go')
+            misclassified_pts, = plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.rcParams['legend.numpoints'] = 1
+            plt.legend([classified_pts, misclassified_pts], ['Correctly classified', 'Misclassified'])
+            plt.title('All Moves Neural Network with Opposite Decision Misclassification [Walking Task]')
+            plt.xlabel('Iteration Number')
+            plt.ylabel('Distance from Target (px)')
             plt.show()
             self.count = -100
 
@@ -419,8 +429,13 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
         if self.count > 1000:
-            plt.plot(self.xclassified, self.classified, 'go')
-            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            classified_pts, = plt.plot(self.xclassified, self.classified, 'go')
+            misclassified_pts, = plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.rcParams['legend.numpoints'] = 1
+            plt.legend([classified_pts, misclassified_pts], ['Correctly classified', 'Misclassified'])
+            plt.title('2-Move Softmax Neural Network [Walking Task]')
+            plt.xlabel('Iteration Number')
+            plt.ylabel('Distance from Target (px)')
             plt.show()
             self.count = -100
 
@@ -513,8 +528,13 @@ class AllMovesSoftmaxGoToLocationController(Controller):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
         if self.count > 1000:
-            plt.plot(self.xclassified, self.classified, 'go')
-            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            classified_pts, = plt.plot(self.xclassified, self.classified, 'go')
+            misclassified_pts, = plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.rcParams['legend.numpoints'] = 1
+            plt.legend([classified_pts, misclassified_pts], ['Correctly classified', 'Misclassified'])
+            plt.title('All Moves Softmax Neural Network [Walking Task]')
+            plt.xlabel('Iteration Number')
+            plt.ylabel('Distance from Target (px)')
             plt.show()
             self.count = -100
 
@@ -648,8 +668,14 @@ class NaiveAvoidEnergyBallsController(Controller):
 
     def make_action(self):
         if self.count > 100:
-            plt.plot(self.xclassified, self.classified, 'go')
-            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            classified_pts, = plt.plot(self.xclassified, self.classified, 'go')
+            misclassified_pts, = plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.rcParams['legend.numpoints'] = 1
+            plt.legend([classified_pts, misclassified_pts], ['Correctly classified', 'Misclassified'])
+            plt.title('Double Class Logistic Regression [Energy Ball Task]')
+            plt.xlabel('Energy Ball Number')
+            plt.ylabel('Jumping Distance (px)')
+            # plt.legend(handles=[classified_pts])
             plt.show()
             self.count = -100
         # sense that a training example is in progress
@@ -724,9 +750,14 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
         self.xmisclassified = []
 
     def make_action(self):
-        if self.count > 700:
-            plt.plot(self.xclassified, self.classified, 'go')
-            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+        if self.count > 2000:
+            classified_pts, = plt.plot(self.xclassified, self.classified, 'go')
+            misclassified_pts, = plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.rcParams['legend.numpoints'] = 1
+            plt.legend([classified_pts, misclassified_pts], ['Correctly classified', 'Misclassified'])
+            plt.title('Triple Class Logistic Regression without Mitigating Factor [Energy Ball Task]')
+            plt.xlabel('Energy Ball Number')
+            plt.ylabel('Jumping Distance (px)')
             plt.show()
             self.count = -700
         # sense that a training example is in progress
@@ -767,7 +798,7 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
             # managed to avoid ball (correctly classified)
             elif len(self.physics.game_objects.energy_balls) == 0:
                 self.brain.train(self.jumping_distance, [0,1,0], self.correctness_weight)
-                self.correctness_weight = self.correctness_weight / 1.01
+                # self.correctness_weight = self.correctness_weight / 1.01
                 self.training_example_in_progress = False
                 print 'Yay :-)!'
                 self.ball_count += 1
