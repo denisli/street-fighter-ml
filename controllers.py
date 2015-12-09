@@ -878,6 +878,129 @@ class NeuralNetworkAvoidEnergyBallsController(Controller):
                     self.character.jump()
                     self.already_jumped_for_example = True
 
+class AvoidVariableSpeedEnergyBallsController(Controller):
+    def __init__(self, character, physics, brain):
+        super(AvoidVariableSpeedEnergyBallsController, self).__init__(character)
+        '''
+        Our brain is a logistic regression, which decides whether or not the character
+        should jump. The brain will be trained to learn how to avoid energy balls by learning
+        the best time to jump.
+
+        This brain will be trained in an environment in which there may only be at most 
+        1 energy ball fired.
+        '''
+        self.physics = physics
+        self.brain = brain
+        self.training_example_in_progress = False
+        self.already_jumped_for_example = False # ensure that you only jump once per example
+        self.jumping_distance = 0 # some stupid initialization
+        self.ball_speed = 0 # some stupid initialization
+
+        # variables for giving the bot a chance to learn
+        self.num_times_not_jumped = 0
+        self.make_learning_jump = False # used to force character to have training samples
+
+        # variable for weighing the gains
+        self.correctness_weight = 1.0
+        self.ball_count = 0
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
+
+    def make_action(self):
+        # if self.count > 700:
+        #     plt.plot(self.xclassified, self.classified, 'go')
+        #     plt.plot(self.xmisclassified, self.misclassified, 'rx')
+        #     plt.show()
+        #     self.count = -700
+        # sense that a training example is in progress
+        if len(self.physics.game_objects.energy_balls) > 0:
+            if not self.training_example_in_progress: # new training example
+                self.ball_speed = self.physics.game_objects.energy_balls[0].movement_speed
+                print 'New ball speed:', self.ball_speed
+                self.already_jumped_for_example = False
+                self.training_example_in_progress = True
+
+        # train the logistic regression
+        if self.training_example_in_progress:
+            # get hit by energy ball (misclassified)
+            if self.character.is_hurt:
+                # the character did not even bother to jump...
+                if not self.already_jumped_for_example:
+                    self.num_times_not_jumped += 1
+                    print 'Did not jump for this many times:', self.num_times_not_jumped
+                else: # there is no need to make a learning jump if we tried to jump
+                    self.make_learning_jump = False
+                # if the character was early in jumping...
+                if self.already_jumped_for_example and self.character.vertical_speed >= 0:
+                    for i in range(10): # put more weight into misclassifications
+                        self.brain.train([self.ball_speed, self.jumping_distance / 100.0], [1,0,0])
+                    print 'Misclassified, too early :-('
+                # if the character was late in jumping
+                else:
+                    if self.already_jumped_for_example:
+                        for i in range(10): # put more weight into misclassifications
+                            self.brain.train([self.ball_speed, self.jumping_distance / 100.0], [0,0,1])
+                    else:
+                        for i in range(10):
+                            self.brain.train([self.ball_speed, 0], [0,0,1])
+                    print 'Misclassified, too late :-('
+                self.training_example_in_progress = False
+                self.ball_count = 0
+                self.count += 1
+                self.xmisclassified.append(self.count)
+                self.misclassified.append(self.jumping_distance)
+            # managed to avoid ball (correctly classified)
+            elif len(self.physics.game_objects.energy_balls) == 0:
+                self.brain.train([self.ball_speed, self.jumping_distance / 100.0], [0,1,0], self.correctness_weight)
+                self.correctness_weight = self.correctness_weight / 1.01
+                self.training_example_in_progress = False
+                print 'Yay :-)!'
+                self.ball_count += 1
+                self.count += 1
+                self.xclassified.append(self.count)
+                self.classified.append(self.jumping_distance)
+
+        # if a training example is in progress you should decide on what to do
+        if self.training_example_in_progress:
+            # make a decision if you haven't
+            if not self.already_jumped_for_example:
+                energy_ball = self.physics.game_objects.energy_balls[0]
+                distance = min(abs(self.character.bounding_box.x - (energy_ball.bounding_box.x+energy_ball.bounding_box.width)),
+                    abs(self.character.bounding_box.x + self.character.bounding_box.width - energy_ball.bounding_box.x))
+                decision = self.brain.predict([self.ball_speed, distance / 100.0]) # scaled down by 100 for distance for more reasonable coefficients
+                # find the maximum index
+                best_index = 2
+                best_probability = decision[2]
+                for i in range(2):
+                    if decision[i] > best_probability:
+                        best_index = i
+                        best_probability = decision[i]
+
+                # if best_index is 1 (just the right time to jump!) then jump
+                if best_index == 1:
+                    print 'jumping distance:', distance, ', best_index:', best_index
+                    self.jumping_distance = distance
+                    self.character.jump()
+                    self.already_jumped_for_example = True
+                    self.num_times_not_jumped = 0
+                # if the character has not tried to jump for the previous energy ball, force him to want to
+                elif self.num_times_not_jumped >= 1:
+                    print 'will try to jump due to lack of interest in jumping :-('
+                    self.make_learning_jump = True
+                    self.num_times_not_jumped = 0
+                # actually force the character to jump if it senses that it is best_index = 2 (too late to avoid energy ball)
+                if not self.already_jumped_for_example and self.make_learning_jump and best_index == 2:
+                    print 'make a learning jump'
+                    print 'jumping distance:', distance, ', best_index:', best_index
+                    self.jumping_distance = distance
+                    self.character.jump()
+                    self.already_jumped_for_example = True
+                    self.num_times_not_jumped = 0
+
+
 class QLearningAvoidEnergyBallsController(Controller):
     def __init__(self, character, physics, brain):
         super(QLearningAvoidEnergyBallsController, self).__init__(character)
@@ -958,6 +1081,8 @@ class BeatPunchingBagController(Controller):
         self.prev_distance = 0 # useless initialization
         self.decision = None # useless initialization
 
+        self.training_stopped = False
+
     def make_action(self):
         if self.character.delay > 0: return
         opponent = self.physics.get_opponent(self.character)
@@ -970,7 +1095,7 @@ class BeatPunchingBagController(Controller):
         if self.first_turn:
             self.first_turn = False
         # Do training if not first turn
-        else:
+        elif not self.training_stopped:
             # if enemy was in attack range
             if self.was_in_attack_range:
                 # classify correctly if enemy is hurt
@@ -1015,6 +1140,9 @@ class BeatPunchingBagController(Controller):
         self.prev_distance = distance_from_enemy
         self.was_in_attack_range = is_in_attack_range
         self.move_map[move_index]()
+
+    def stop_training(self):
+        self.training_stopped = True
 
 class SmarterBeatPunchingBagController(Controller):
     def __init__(self, character, physics, brain):

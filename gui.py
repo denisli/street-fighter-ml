@@ -3,6 +3,7 @@ import neural_network as nn
 #import softmax_neural_network as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
+import tri_class_two_dimension_logistic_regression as tctdlr
 import qlearning as ql
 from shapes import *
 from controllers import *
@@ -23,7 +24,7 @@ def main():
     energy_ball_image = pygame.image.load('energy_ball.png')
     # initialize the players
     # player 1
-    blocky = SimpleRenderingWrapper(Blocky(10, 300), 
+    blocky = SimpleRenderingWrapper(TrickyBlocky(10, 300), 
         pygame.image.load('blocky.png'),
         pygame.image.load('blocky-punch.png'),
         pygame.image.load('blocky-kick.png'),
@@ -61,11 +62,15 @@ def main():
     # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
     #    physics, tclr.TriClassSingleDimensionLogisticRegression())
 
+    # AI controller to avoid energy balls with variable speed
+    #controller2 = AvoidVariableSpeedEnergyBallsController(player2,
+    #    physics, tctdlr.TriClassTwoDimensionLogisticRegression())
+
     # controller2 = NaiveAvoidEnergyBallsController(player2, 
     #    physics, lr.SingleDimensionLogisticRegression())
 
-    controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
-       physics, nn.NeuralNetwork(1, 50, 2))
+    #controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
+    #   physics, nn.NeuralNetwork(1, 50, 2))
 
     # AI controller to walk to a certain location
     # controller2 = TwoMoveNaiveGoToLocationController(player2, 
@@ -84,15 +89,18 @@ def main():
     #     physics, smnn.SoftmaxNeuralNetwork(), 200)
 
     # AI controller to punch a "punching bag"
-    # controller2 = BeatPunchingBagController(player2, 
-    #     physics, nn.NeuralNetwork(1, 10, 5))
+    #brain = pickle.load(open('dumb_beat.p', 'r'))
+    #brain = nn.NeuralNetwork(1, 10, 5)
+    #controller2 = BeatPunchingBagController(player2, 
+    #    physics, brain)
+    #controller2.stop_training()
 
     # AI controller with smarter fighting abilities against a passive opponent
-    brain = pickle.load(open('save.p', 'r'))
+    #brain = pickle.load(open('smart_beat.p', 'r'))
     #brain = nn.NeuralNetwork(2, 10, 5)
-    controller2 = SmarterBeatPunchingBagController(player2,
-        physics, brain)
-    controller2.stop_training()
+    #controller2 = SmarterBeatPunchingBagController(player2,
+    #    physics, brain)
+    #controller2.stop_training()
     
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
@@ -151,13 +159,14 @@ def main():
 
         key = pygame.key.get_pressed()
         if key[pygame.K_p]:
-            pickle.dump(brain, open("save.p", "wb"))
+            pickle.dump(brain, open("dumb_beat.p", "wb"))
 
         pygame.display.flip()
 
 def autotrain_main():
     pygame.init()
 
+    #player1 = TrickyBlocky(10, 300)
     player1 = InfiniteManaBlocky(10, 300)
     player2 = Blocky(450, 300)
 
@@ -169,8 +178,8 @@ def autotrain_main():
 
     # AI controllers
     controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller2 = AllMovesSoftmaxGoToLocationController(player2, 
-        physics, smnn.SoftmaxNeuralNetwork(), 200)
+    # controller2 = AvoidVariableSpeedEnergyBallsController(player2,
+    #     physics, tctdlr.TriClassTwoDimensionLogisticRegression())
     # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
     #     physics, smnn.SoftmaxNeuralNetwork(), 200)
     # controller2 = AllMovesNaiveGoToLocationController(player2, 
@@ -179,8 +188,8 @@ def autotrain_main():
     #     physics, nn.NeuralNetwork(1, 50, 3), 200)
     # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
     #    physics, tclr.TriClassSingleDimensionLogisticRegression())
-    # controller2 = NaiveAvoidEnergyBallsController(player2, 
-    #    physics, lr.SingleDimensionLogisticRegression())
+    controller2 = NaiveAvoidEnergyBallsController(player2, 
+       physics, lr.SingleDimensionLogisticRegression())
 
     milliseconds_per_frame = 17
     while 1:
@@ -206,4 +215,4 @@ if __name__ == '__main__':
     # for i in range(1):
     #     average += autotrain_main()
     #     print average/1
-    main()
+    autotrain_main()
