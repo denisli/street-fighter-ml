@@ -52,8 +52,8 @@ def main():
     mana_bar2 = ManaBar(400, 100, 100)
 
     # player 1 controller
-    # controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller1 = Player1Controller(player1)
+    controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    #controller1 = Player1Controller(player1)
 
     # player 2 controller
     # controller2 = Player2Controller(player2)
@@ -166,8 +166,8 @@ def main():
 def autotrain_main():
     pygame.init()
 
-    #player1 = TrickyBlocky(10, 300)
-    player1 = InfiniteManaBlocky(10, 300)
+    player1 = TrickyBlocky(10, 300)
+    #player1 = InfiniteManaBlocky(10, 300)
     player2 = Blocky(450, 300)
 
     # create game objects container
@@ -188,10 +188,10 @@ def autotrain_main():
     #     physics, nn.NeuralNetwork(1, 50, 7), 200)
     # controller2 = TwoMoveNaiveGoToLocationController(player2, 
     #     physics, nn.NeuralNetwork(1, 50, 3), 200)
-    # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
-    #    physics, tclr.TriClassSingleDimensionLogisticRegression())
-    controller2 = NaiveAvoidEnergyBallsController(player2, 
-       physics, lr.SingleDimensionLogisticRegression())
+    controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
+       physics, tclr.TriClassSingleDimensionLogisticRegression())
+    # controller2 = NaiveAvoidEnergyBallsController(player2, 
+    #    physics, lr.SingleDimensionLogisticRegression())
 
     milliseconds_per_frame = 17
     while 1:

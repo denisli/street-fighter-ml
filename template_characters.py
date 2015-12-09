@@ -41,7 +41,7 @@ class TrickyBlockyEnergyBallAttack(EnergyBallAttack):
 		else:
 			return TrickyBlockyEnergyBall(owner, owner.facing_right,
 				owner.bounding_box.x - (self.x - owner.bounding_box.width) - 25,
-				owner.bounding_box.y + self.y, np.random.uniform(0.25, 0.8))
+				owner.bounding_box.y + self.y, np.random.uniform(0.25, 1.25))
 
 class Blocky(Character):
 	def __init__(self, x, y):
