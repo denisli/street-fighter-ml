@@ -212,6 +212,8 @@ class TwoMoveGoToLocationController(Controller):
         self.brain = brain
         self.location = location
 
+        self.classification_count = 0
+
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
@@ -244,7 +246,9 @@ class TwoMoveGoToLocationController(Controller):
                     else:
                         self.brain.backward(self.decision, 1)
                         print 'correctly classified'
-
+                    self.classification_count = 0
+                else:
+                    self.classification_count += 1
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
@@ -278,6 +282,8 @@ class AllMovesGoToLocationController(Controller):
         self.brain = brain
         self.location = location
 
+        self.classification_count = 0
+
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
@@ -310,7 +316,9 @@ class AllMovesGoToLocationController(Controller):
                     else:
                         self.brain.backward(self.decision, 1)
                         print 'correctly classified'
-
+                    self.classification_count = 0
+                else:
+                    self.classification_count += 1
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
@@ -343,6 +351,8 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         self.physics = physics
         self.brain = brain
         self.location = location
+
+        self.classification_count = 0
 
         self.decision = None # useless initialization
 
@@ -379,6 +389,9 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
                     else:
                         self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
                         print 'correctly classified'
+                    self.classification_count = 0
+                else:
+                    self.classification_count += 1
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -416,6 +429,8 @@ class AllMovesSoftmaxGoToLocationController(Controller):
         self.brain = brain
         self.location = location
 
+        self.classification_count = 0
+
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
@@ -448,6 +463,9 @@ class AllMovesSoftmaxGoToLocationController(Controller):
                 else:
                     self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
                     print 'correctly classified'
+                self.classification_count = 0
+            else:
+                self.classification_count += 1
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_distance_away = distance

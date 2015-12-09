@@ -1,6 +1,6 @@
 import sys, pygame
 import neural_network as nn
-#import softmax_neural_network as smnn
+import softmax_neural_network as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
 import qlearning as ql
@@ -72,12 +72,12 @@ def main():
     #     physics, brain, 200)
 
     # AI controller to walk to a certain location
-    controller2 = AllMovesNaiveGoToLocationController(player2, 
-        physics, nn.NeuralNetwork(1, 50, 7), 200)
+    # controller2 = AllMovesNaiveGoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(1, 50, 7), 200)
   
     # Two Move Softmax AI controller to walk to a certain location
-    # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
-    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
+    controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
+        physics, smnn.SoftmaxNeuralNetwork(), 200)
 
     # All Moves Softmax AI controller to walk to a certain location
     # controller2 = AllMovesSoftmaxGoToLocationController(player2, 
@@ -138,9 +138,9 @@ def main():
         # render the timer
         countdown_label.update_value(str(physics.countdown / 1000))
         countdown_label.render(screen)
-        if controller2.classification_count > 10:
-            print physics.countdown
-            break
+        # if controller2.classification_count > 10:
+        #     print physics.countdown
+        #     break
 
         key = pygame.key.get_pressed()
         if key[pygame.K_p]:
@@ -185,8 +185,8 @@ def autotrain_main():
     return physics.countdown
 
 if __name__ == '__main__':
-    # average = 0
-    # for i in range(1):
-    #     average += autotrain_main()
-    #     print average/1
-    main()
+    average = 0
+    for i in range(10):
+        average += autotrain_main()
+        print average/10
+    # main()
