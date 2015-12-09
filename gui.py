@@ -67,17 +67,17 @@ def main():
     #    physics, nn.NeuralNetwork(1, 50, 2))
 
     # AI controller to walk to a certain location
-    # brain = nn.NeuralNetwork(1, 50, 3)
-    # controller2 = TwoMoveNaiveGoToLocationController(player2, 
-    #     physics, brain, 200)
+    brain = nn.NeuralNetwork(1, 50, 3)
+    controller2 = TwoMoveNaiveGoToLocationController(player2, 
+        physics, brain, 200)
 
     # AI controller to walk to a certain location
-    # controller2 = AllMovesNaiveGoToLocationController(player2, 
+    # controller2 = AllMovesGoToLocationController(player2, 
     #     physics, nn.NeuralNetwork(1, 50, 7), 200)
   
     # Two Move Softmax AI controller to walk to a certain location
-    controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
-        physics, smnn.SoftmaxNeuralNetwork(), 200)
+    # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
+    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
 
     # All Moves Softmax AI controller to walk to a certain location
     # controller2 = AllMovesSoftmaxGoToLocationController(player2, 
@@ -161,9 +161,9 @@ def autotrain_main():
     physics = SimplePhysics(game_objects, -0.003)
 
     # AI controllers
-    controller1 = Player1Controller(player1)
-    controller2 = AllMovesNaiveGoToLocationController(player2, 
-        physics, nn.NeuralNetwork(1, 50, 7), 200)
+    controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    controller2 = NaiveAvoidEnergyBallsController(player2, 
+       physics, lr.SingleDimensionLogisticRegression())
 
     milliseconds_per_frame = 17
     while 1:
@@ -179,14 +179,14 @@ def autotrain_main():
 
         # update time in the game
         physics.update(milliseconds_per_frame)
-        if controller2.classification_count > 10:
+        if controller2.count < 0:
             break
     
     return physics.countdown
 
 if __name__ == '__main__':
     average = 0
-    for i in range(10):
+    for i in range(1):
         average += autotrain_main()
-        print average/10
+        print average/1
     # main()

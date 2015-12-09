@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Controller(object):
     def __init__(self, character):
@@ -81,7 +82,7 @@ class TwoMoveNaiveGoToLocationController(Controller):
         self.first_turn = True
 
         # threshold for committing to a move
-        self.commitment_threshold = 0.5
+        self.commitment_threshold = 0.4
 
         self.training_stopped = False
 
@@ -99,8 +100,9 @@ class TwoMoveNaiveGoToLocationController(Controller):
                     # if we at same position or further, pretend the correct classification is doing everything else
                     # we must include delay as being further
                     if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                        self.brain.backward(1-self.decision, 1)
+                        self.brain.backward(1-self.decision, 0.01)
                         print 'misclassified. distance:', distance
+                        print self.decision
                     # otherwise, our classification is considered correct
                     else:
                         self.brain.backward(self.decision, 1)
@@ -117,10 +119,13 @@ class TwoMoveNaiveGoToLocationController(Controller):
         self.decision = np.copy(self.brain.oOutput)
         print self.decision
         # make the move based on the output
-        index = np.argmax(self.decision)
-        self.decision[:][0] = 0
-        self.decision[index][0] = 1
-        self.move_map[index]()
+        for i in range(len(self.move_map)):
+            if self.decision[i][0] > self.commitment_threshold:
+                self.move_map[i]()
+        # index = np.argmax(self.decision)
+        # self.decision[:][0] = 0
+        # self.decision[index][0] = 1
+        # self.move_map[index]()
 
     def stop_training(self):
         self.training_stopped = True
@@ -169,9 +174,9 @@ class AllMovesNaiveGoToLocationController(Controller):
                     # if we at same position or further, pretend the correct classification is doing everything else
                     # we must include delay as being further
                     if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                        self.brain.backward(1-self.decision, 1)
-                        print 1 - self.decision
+                        self.brain.backward(1-self.decision, 0.1)
                         print 'misclassified. distance:', distance
+                        # print 1 - self.decision
                     # otherwise, our classification is considered correct
                     else:
                         self.brain.backward(self.decision, 1)
@@ -190,7 +195,7 @@ class AllMovesNaiveGoToLocationController(Controller):
             print self.decision
             # make the move based on the output
             index = np.argmax(self.decision)
-            self.decision[:][0] = 0
+            self.decision[:] = 0
             self.decision[index][0] = 1
             self.move_map[index]()
 
@@ -311,8 +316,9 @@ class AllMovesGoToLocationController(Controller):
                     # if we at same position or further, pretend the correct classification is doing everything else
                     # we must include delay as being further
                     if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
-                        self.brain.backward(self.decision, -1)
+                        self.brain.backward(self.decision, -0.1)
                         print 'misclassified. distance:', distance
+                        print self.decision
                     # otherwise, our classification is considered correct
                     else:
                         self.brain.backward(self.decision, 1)
@@ -373,7 +379,7 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
         if not self.first_turn:
             # we only need to train if we think we are far away
             if not self.training_stopped:
-                if abs(distance) >= 0:
+                if abs(distance) >= 100:
                     # any output coordinate >= 0.5 was used, so set it to 1
                     # otherwise set it to 0
                     # if we at same position or further, pretend the correct classification is doing everything else
@@ -447,7 +453,7 @@ class AllMovesSoftmaxGoToLocationController(Controller):
         # train the brain if it is not the first turn (use previous round's results to do this)
         if not self.first_turn:
             # we only need to train if we think we are far away
-            if abs(distance) >= 0:
+            if abs(distance) >= 100:
                 # any output coordinate >= 0.5 was used, so set it to 1
                 # otherwise set it to 0
                 # if we at same position or further, pretend the correct classification is doing everything else
@@ -557,7 +563,19 @@ class NaiveAvoidEnergyBallsController(Controller):
         self.commitment_threshold = 0.5
         self.jumping_distance = 0 # some stupid initialization
 
+        self.ball_count = 0
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
+
     def make_action(self):
+        if self.count > 100:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -100
         # sense that a training example is in progress
         if len(self.physics.game_objects.energy_balls) > 0:
             if not self.training_example_in_progress: # new training example
@@ -569,12 +587,20 @@ class NaiveAvoidEnergyBallsController(Controller):
             if self.character.is_hurt: # get hit by energy ball (misclassified)
                 self.brain.train(self.jumping_distance, False)
                 self.training_example_in_progress = False
+                self.ball_count = 0
+                self.xmisclassified.append(self.count)
+                self.misclassified.append(self.jumping_distance)
+                self.count += 1
                 print 'Misclassified :-('
 
             elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
                 self.brain.train(self.jumping_distance, True)
                 self.training_example_in_progress = False
-                self.commitment_threshold = min(0.9, self.commitment_threshold * 1.1)
+                # self.commitment_threshold = min(0.9, self.commitment_threshold * 1.1)
+                self.ball_count += 1
+                self.xclassified.append(self.count)
+                self.classified.append(self.jumping_distance)
+                self.count += 1
                 print 'Yay :-)!'
 
         if self.training_example_in_progress:
@@ -584,7 +610,7 @@ class NaiveAvoidEnergyBallsController(Controller):
                 distance = min(abs(self.character.bounding_box.x - (energy_ball.bounding_box.x+energy_ball.bounding_box.width)),
                     abs(self.character.bounding_box.x + self.character.bounding_box.width - energy_ball.bounding_box.x))
                 decision = self.brain.predict(distance)
-                print 'probability:', decision
+                # print 'probability:', decision
                 if decision >= self.commitment_threshold:
                     print 'jumping distance:', distance
                     self.jumping_distance = distance
@@ -614,6 +640,7 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
 
         # variable for weighing the gains
         self.correctness_weight = 1.0
+        self.ball_count = 0
 
     def make_action(self):
         # sense that a training example is in progress
@@ -647,12 +674,14 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
                             self.brain.train(0, [0,0,1])
                     print 'Misclassified, too late :-('
                 self.training_example_in_progress = False
+                self.ball_count = 0
             # managed to avoid ball (correctly classified)
             elif len(self.physics.game_objects.energy_balls) == 0:
                 self.brain.train(self.jumping_distance, [0,1,0], self.correctness_weight)
                 self.correctness_weight = self.correctness_weight / 1.01
                 self.training_example_in_progress = False
                 print 'Yay :-)!'
+                self.ball_count += 1
 
         # if a training example is in progress you should decide on what to do
         if self.training_example_in_progress:
