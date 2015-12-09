@@ -58,13 +58,21 @@ def main():
     
     # AI controller to avoid energy balls
     # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
-    #     physics, tclr.TriClassSingleDimensionLogisticRegression())
+    #    physics, tclr.TriClassSingleDimensionLogisticRegression())
+
+    # controller2 = NaiveAvoidEnergyBallsController(player2, 
+    #    physics, lr.SingleDimensionLogisticRegression())
 
     # controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
     #    physics, nn.NeuralNetwork(1, 50, 2))
 
     # AI controller to walk to a certain location
-    controller2 = AllMovesGoToLocationController(player2, 
+    # brain = nn.NeuralNetwork(1, 50, 3)
+    # controller2 = TwoMoveNaiveGoToLocationController(player2, 
+    #     physics, brain, 200)
+
+    # AI controller to walk to a certain location
+    controller2 = AllMovesNaiveGoToLocationController(player2, 
         physics, nn.NeuralNetwork(1, 50, 7), 200)
   
     # Two Move Softmax AI controller to walk to a certain location
@@ -130,6 +138,13 @@ def main():
         # render the timer
         countdown_label.update_value(str(physics.countdown / 1000))
         countdown_label.render(screen)
+        if controller2.classification_count > 10:
+            print physics.countdown
+            break
+
+        key = pygame.key.get_pressed()
+        if key[pygame.K_p]:
+            pickle.dump(brain, open("save.p", "wb"))
 
         pygame.display.flip()
 
@@ -146,11 +161,11 @@ def autotrain_main():
     physics = SimplePhysics(game_objects, -0.003)
 
     # AI controllers
-    controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
-        physics, nn.NeuralNetwork(1, 50, 2))
+    controller1 = Player1Controller(player1)
+    controller2 = AllMovesNaiveGoToLocationController(player2, 
+        physics, nn.NeuralNetwork(1, 50, 7), 200)
 
-    milliseconds_per_frame = 10
+    milliseconds_per_frame = 17
     while 1:
         # handle user input
         events = pygame.event.get()
@@ -164,6 +179,14 @@ def autotrain_main():
 
         # update time in the game
         physics.update(milliseconds_per_frame)
+        if controller2.classification_count > 10:
+            break
+    
+    return physics.countdown
 
 if __name__ == '__main__':
+    # average = 0
+    # for i in range(1):
+    #     average += autotrain_main()
+    #     print average/1
     main()

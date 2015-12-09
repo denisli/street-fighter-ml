@@ -71,6 +71,8 @@ class TwoMoveNaiveGoToLocationController(Controller):
         self.brain = brain
         self.location = location
 
+        self.classification_count = 0
+
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
@@ -91,8 +93,8 @@ class TwoMoveNaiveGoToLocationController(Controller):
         if self.first_turn:
             self.first_turn = False
         else:
-            # we only need to train if we think we are far away
             if not self.training_stopped:
+                # we only need to train if we think we are far away
                 if abs(distance) >= 3:
                     # if we at same position or further, pretend the correct classification is doing everything else
                     # we must include delay as being further
@@ -103,7 +105,9 @@ class TwoMoveNaiveGoToLocationController(Controller):
                     else:
                         self.brain.backward(self.decision, 1)
                         print 'correctly classified'
-
+                    self.classification_count = 0
+                else:
+                    self.classification_count += 1
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
@@ -137,6 +141,8 @@ class AllMovesNaiveGoToLocationController(Controller):
         self.brain = brain
         self.location = location
 
+        self.classification_count = 0
+
         self.decision = None # useless initialization
 
         # mapping from the neural net output to the actual move
@@ -157,8 +163,8 @@ class AllMovesNaiveGoToLocationController(Controller):
         if self.first_turn:
             self.first_turn = False
         else:
-            # we only need to train if we think we are far away
             if not self.training_stopped:
+                # we only need to train if we think we are far away
                 if abs(distance) >= 3:
                     # if we at same position or further, pretend the correct classification is doing everything else
                     # we must include delay as being further
@@ -170,7 +176,9 @@ class AllMovesNaiveGoToLocationController(Controller):
                     else:
                         self.brain.backward(self.decision, 1)
                         print 'correctly classified'
-
+                    self.classification_count = 0
+                else:
+                    self.classification_count += 1
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
