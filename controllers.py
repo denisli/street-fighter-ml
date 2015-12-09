@@ -1015,3 +1015,82 @@ class BeatPunchingBagController(Controller):
         self.prev_distance = distance_from_enemy
         self.was_in_attack_range = is_in_attack_range
         self.move_map[move_index]()
+
+class SmarterBeatPunchingBagController(Controller):
+    def __init__(self, character, physics, brain):
+        super(SmarterBeatPunchingBagController, self).__init__(character)
+        self.physics = physics
+        self.brain = brain
+        self.first_turn = True
+        self.was_in_attack_range = False
+        self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.do_kick, 3: self.character.do_punch, 4: lambda *args: None}
+        self.prev_move = [] # useless initialization
+        self.prev_distance = 0 # useless initialization
+        self.decision = None # useless initialization
+
+        self.training_stopped = False
+
+    def make_action(self):
+        if self.character.delay > 0: return
+        opponent = self.physics.get_opponent(self.character)
+        distance_from_enemy = self.character.bounding_box.x - opponent.bounding_box.x
+        attack_range = min(self.character.punch.bounding_box.width, self.character.kick.bounding_box.width)
+        is_in_attack_range = abs(distance_from_enemy) - self.character.bounding_box.width < attack_range
+        if is_in_attack_range:
+            attack_range_input = 200
+        else:
+            attack_range_input = 0
+        
+        print distance_from_enemy
+        # Do not train if first turn
+        if self.first_turn:
+            self.first_turn = False
+        # Do training if not first turn
+        elif not self.training_stopped:
+            # if enemy was in attack range
+            if self.was_in_attack_range:
+                # classify correctly if enemy is hurt
+                if opponent.is_hurt:
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 0
+                    self.decision[index] = 1
+                    self.brain.backward(self.decision, 1)
+                    print "Classified: Enemy is hurt"
+                # misclassify if enemy not hurt
+                else:
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 1
+                    self.decision[index] = 0
+                    self.brain.backward(self.decision, 1)
+                    print "Misclassified: Enemy is not hurt"
+            # if enemy was not in attack range
+            else:
+                # classify correctly if enemy in attack range
+                if abs(self.prev_distance) - (self.character.delay * 5) > abs(distance_from_enemy):
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 0
+                    self.decision[index] = 1
+                    self.brain.backward(self.decision, 1)
+                    print "Classified: Enemy in attack range"
+                # misclassify if enemy not hurt
+                else:
+                    index = np.argmax(self.decision)
+                    self.decision[:] = 1
+                    self.decision[index] = 0
+                    self.brain.backward(self.decision, 1)
+                    print "Misclassified: Enemy not in attack range"
+        
+        # get the output from the network based on current state
+        self.brain.forward([attack_range_input, distance_from_enemy])
+        self.decision = np.copy(self.brain.oOutput)
+        print self.decision
+        # make the move based on the output
+
+        move_index = np.argmax(self.decision)
+
+        self.prev_distance = distance_from_enemy
+        self.was_in_attack_range = is_in_attack_range
+        self.move_map[move_index]()
+
+    def stop_training(self):
+        self.training_stopped = True

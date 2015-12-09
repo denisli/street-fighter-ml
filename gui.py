@@ -1,6 +1,6 @@
 import sys, pygame
 import neural_network as nn
-import softmax_neural_network as smnn
+#import softmax_neural_network as smnn
 import single_dimension_logistic_regression as lr
 import tri_class_single_dimension_logistic_regression as tclr
 import qlearning as ql
@@ -12,6 +12,7 @@ from template_characters import *
 from physics import *
 from bars import *
 from gui_components import *
+import pickle
 
 def main():
     pygame.init()
@@ -85,6 +86,13 @@ def main():
     # AI controller to punch a "punching bag"
     # controller2 = BeatPunchingBagController(player2, 
     #     physics, nn.NeuralNetwork(1, 10, 5))
+
+    # AI controller with smarter fighting abilities against a passive opponent
+    brain = pickle.load(open('save.p', 'r'))
+    #brain = nn.NeuralNetwork(2, 10, 5)
+    controller2 = SmarterBeatPunchingBagController(player2,
+        physics, brain)
+    controller2.stop_training()
     
     countdown_label = Label(300, 50, str(physics.countdown / 1000))
 
@@ -194,8 +202,8 @@ def autotrain_main():
     return physics.countdown
 
 if __name__ == '__main__':
-    average = 0
-    for i in range(1):
-        average += autotrain_main()
-        print average/1
-    # main()
+    # average = 0
+    # for i in range(1):
+    #     average += autotrain_main()
+    #     print average/1
+    main()
