@@ -183,15 +183,16 @@ class AllMovesNaiveGoToLocationController(Controller):
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
         
-        # get the output from the network based on current state
-        self.brain.forward([distance])
-        self.decision = np.copy(self.brain.oOutput)
-        print self.decision
-        # make the move based on the output
-        index = np.argmax(self.decision)
-        self.decision[:][0] = 0
-        self.decision[index][0] = 1
-        self.move_map[index]()
+        if self.character.delay == 0:
+            # get the output from the network based on current state
+            self.brain.forward([distance])
+            self.decision = np.copy(self.brain.oOutput)
+            print self.decision
+            # make the move based on the output
+            index = np.argmax(self.decision)
+            self.decision[:][0] = 0
+            self.decision[index][0] = 1
+            self.move_map[index]()
 
     def stop_training(self):
         self.training_stopped = True
@@ -323,15 +324,16 @@ class AllMovesGoToLocationController(Controller):
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
         
-        # get the output from the network based on current state
-        self.brain.forward([distance])
-        self.decision = np.copy(self.brain.oOutput)
-        print self.decision
-        # make the move based on the output
-        index = np.argmax(self.decision)
-        self.decision[:][0] = 0
-        self.decision[index][0] = 1
-        self.move_map[index]()
+        if self.character.delay == 0:
+            # get the output from the network based on current state
+            self.brain.forward([distance])
+            self.decision = np.copy(self.brain.oOutput)
+            print self.decision
+            # make the move based on the output
+            index = np.argmax(self.decision)
+            self.decision[:][0] = 0
+            self.decision[index][0] = 1
+            self.move_map[index]()
 
     def stop_training(self):
         self.training_stopped = True
