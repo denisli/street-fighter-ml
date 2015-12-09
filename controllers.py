@@ -86,9 +86,20 @@ class TwoMoveNaiveGoToLocationController(Controller):
 
         self.training_stopped = False
 
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
+        if self.classification_count > 100:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -100
 
         # train the brain if it is not the first turn (use previous round's results to do this)
         if self.first_turn:
@@ -96,20 +107,28 @@ class TwoMoveNaiveGoToLocationController(Controller):
         else:
             if not self.training_stopped:
                 # we only need to train if we think we are far away
-                if abs(distance) >= 3:
+                if abs(distance) > 2:
                     # if we at same position or further, pretend the correct classification is doing everything else
                     # we must include delay as being further
                     if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
                         self.brain.backward(1-self.decision, 0.01)
                         print 'misclassified. distance:', distance
                         print self.decision
+                        self.misclassified.append(distance)
+                        self.xmisclassified.append(self.count)
                     # otherwise, our classification is considered correct
                     else:
                         self.brain.backward(self.decision, 1)
                         print 'correctly classified'
+                        self.classified.append(distance)
+                        self.xclassified.append(self.count)
                     self.classification_count = 0
+                    self.count += 1
                 else:
                     self.classification_count += 1
+                    self.count += 1
+                    self.classified.append(distance)
+                    self.xclassified.append(self.count)
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
@@ -119,13 +138,13 @@ class TwoMoveNaiveGoToLocationController(Controller):
         self.decision = np.copy(self.brain.oOutput)
         print self.decision
         # make the move based on the output
-        for i in range(len(self.move_map)):
-            if self.decision[i][0] > self.commitment_threshold:
-                self.move_map[i]()
-        # index = np.argmax(self.decision)
-        # self.decision[:][0] = 0
-        # self.decision[index][0] = 1
-        # self.move_map[index]()
+        # for i in range(len(self.move_map)):
+        #     if self.decision[i][0] > self.commitment_threshold:
+        #         self.move_map[i]()
+        index = np.argmax(self.decision)
+        self.decision[:][0] = 0
+        self.decision[index][0] = 1
+        self.move_map[index]()
 
     def stop_training(self):
         self.training_stopped = True
@@ -160,9 +179,20 @@ class AllMovesNaiveGoToLocationController(Controller):
 
         self.training_stopped = False
 
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
+        if self.classification_count > 100:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -100
 
         # train the brain if it is not the first turn (use previous round's results to do this)
         if self.first_turn:
@@ -176,14 +206,22 @@ class AllMovesNaiveGoToLocationController(Controller):
                     if self.previous_absolute_distance_away <= abs(distance) + 5 * self.character.delay * self.character.movement_speed:
                         self.brain.backward(1-self.decision, 0.1)
                         print 'misclassified. distance:', distance
+                        self.misclassified.append(distance)
+                        self.xmisclassified.append(self.count)
                         # print 1 - self.decision
                     # otherwise, our classification is considered correct
                     else:
                         self.brain.backward(self.decision, 1)
                         print 'correctly classified'
+                        self.classified.append(distance)
+                        self.xclassified.append(self.count)
                     self.classification_count = 0
+                    self.count += 1
                 else:
                     self.classification_count += 1
+                    self.count += 1
+                    self.classified.append(distance)
+                    self.xclassified.append(self.count)
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_absolute_distance_away = abs(distance)
@@ -371,9 +409,20 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
 
         self.training_stopped = False
 
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
+        if self.count > 1000:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -100
 
         # train the brain if it is not the first turn (use previous round's results to do this)
         if not self.first_turn:
@@ -393,13 +442,21 @@ class TwoMoveSoftmaxGoToLocationController(Controller):
                         self.decision[0][i] = 1
                         self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
                         print 'misclassified. distance:', distance
+                        self.misclassified.append(distance)
+                        self.xmisclassified.append(self.count)
                     # otherwise, our classification is considered correct
                     else:
                         self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
                         print 'correctly classified'
+                        self.classified.append(distance)
+                        self.xclassified.append(self.count)
                     self.classification_count = 0
+                    self.count += 1
                 else:
                     self.classification_count += 1
+                    self.count += 1
+                    self.classified.append(distance)
+                    self.xclassified.append(self.count)
 
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
@@ -446,9 +503,20 @@ class AllMovesSoftmaxGoToLocationController(Controller):
         self.first_turn = True
         self.previous_distance_away = get_character_center(self.character) - location
 
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
+
     def make_action(self):
         # set the inputs into the neural network
         distance = get_character_center(self.character) - self.location
+        if self.count > 1000:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -100
 
         # train the brain if it is not the first turn (use previous round's results to do this)
         if not self.first_turn:
@@ -467,13 +535,21 @@ class AllMovesSoftmaxGoToLocationController(Controller):
                     self.decision[0][i] = 1
                     self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
                     print 'misclassified. distance:', distance
+                    self.misclassified.append(distance)
+                    self.xmisclassified.append(self.count)
                 # otherwise, our classification is considered correct
                 else:
                     self.brain.train(np.array([[self.previous_distance_away]]), self.decision)
                     print 'correctly classified'
+                    self.classified.append(distance)
+                    self.xclassified.append(self.count)
                 self.classification_count = 0
+                self.count += 1
             else:
                 self.classification_count += 1
+                self.count += 1
+                self.classified.append(distance)
+                self.xclassified.append(self.count)
 
         # set the absolute distance away for use in the next iterations (to tell if we got closer or not)
         self.previous_distance_away = distance
@@ -641,8 +717,18 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
         # variable for weighing the gains
         self.correctness_weight = 1.0
         self.ball_count = 0
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
 
     def make_action(self):
+        if self.count > 700:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -700
         # sense that a training example is in progress
         if len(self.physics.game_objects.energy_balls) > 0:
             if not self.training_example_in_progress: # new training example
@@ -675,6 +761,9 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
                     print 'Misclassified, too late :-('
                 self.training_example_in_progress = False
                 self.ball_count = 0
+                self.count += 1
+                self.xmisclassified.append(self.count)
+                self.misclassified.append(self.jumping_distance)
             # managed to avoid ball (correctly classified)
             elif len(self.physics.game_objects.energy_balls) == 0:
                 self.brain.train(self.jumping_distance, [0,1,0], self.correctness_weight)
@@ -682,6 +771,9 @@ class EarlynessAwareAvoidEnergyBallsController(Controller):
                 self.training_example_in_progress = False
                 print 'Yay :-)!'
                 self.ball_count += 1
+                self.count += 1
+                self.xclassified.append(self.count)
+                self.classified.append(self.jumping_distance)
 
         # if a training example is in progress you should decide on what to do
         if self.training_example_in_progress:
@@ -728,10 +820,20 @@ class NeuralNetworkAvoidEnergyBallsController(Controller):
         self.training_example_in_progress = False
         self.already_jumped_for_example = False
         self.jumping_distance = 0
+        self.count = 0
+        self.classified = []
+        self.misclassified = []
+        self.xclassified = []
+        self.xmisclassified = []
 
         self.correctness_weight = 1.0
 
     def make_action(self):
+        if self.count > 100:
+            plt.plot(self.xclassified, self.classified, 'go')
+            plt.plot(self.xmisclassified, self.misclassified, 'rx')
+            plt.show()
+            self.count = -700
         # sense that a training example is in progress
         if len(self.physics.game_objects.energy_balls) > 0:
             if not self.training_example_in_progress: # new training example
@@ -741,15 +843,21 @@ class NeuralNetworkAvoidEnergyBallsController(Controller):
         # train the logistic regression
         if self.training_example_in_progress:
             if self.character.is_hurt: # get hit by energy ball (misclassified)
-                self.brain.backward(self.decision, -1)
+                self.brain.backward(1-self.decision, 1)
                 self.training_example_in_progress = False
                 print 'Misclassified :-('
+                self.count += 1
+                self.xmisclassified.append(self.count)
+                self.misclassified.append(self.jumping_distance)
 
             elif len(self.physics.game_objects.energy_balls) == 0: # managed to avoid ball (correctly classified)
                 self.brain.backward(self.decision, self.correctness_weight)
                 self.correctness_weight# = self.correctness_weight / 1.01
                 self.training_example_in_progress = False
                 print 'Yay :-)!'
+                self.count += 1
+                self.xclassified.append(self.count)
+                self.classified.append(self.jumping_distance)
 
         if self.training_example_in_progress:
             # make a decision if you haven't

@@ -63,13 +63,12 @@ def main():
     # controller2 = NaiveAvoidEnergyBallsController(player2, 
     #    physics, lr.SingleDimensionLogisticRegression())
 
-    # controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
-    #    physics, nn.NeuralNetwork(1, 50, 2))
+    controller2 = NeuralNetworkAvoidEnergyBallsController(player2, 
+       physics, nn.NeuralNetwork(1, 50, 2))
 
     # AI controller to walk to a certain location
-    brain = nn.NeuralNetwork(1, 50, 3)
-    controller2 = TwoMoveNaiveGoToLocationController(player2, 
-        physics, brain, 200)
+    # controller2 = TwoMoveNaiveGoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(1, 50, 3), 200)
 
     # AI controller to walk to a certain location
     # controller2 = AllMovesGoToLocationController(player2, 
@@ -162,8 +161,18 @@ def autotrain_main():
 
     # AI controllers
     controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    controller2 = NaiveAvoidEnergyBallsController(player2, 
-       physics, lr.SingleDimensionLogisticRegression())
+    controller2 = AllMovesSoftmaxGoToLocationController(player2, 
+        physics, smnn.SoftmaxNeuralNetwork(), 200)
+    # controller2 = TwoMoveSoftmaxGoToLocationController(player2, 
+    #     physics, smnn.SoftmaxNeuralNetwork(), 200)
+    # controller2 = AllMovesNaiveGoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(1, 50, 7), 200)
+    # controller2 = TwoMoveNaiveGoToLocationController(player2, 
+    #     physics, nn.NeuralNetwork(1, 50, 3), 200)
+    # controller2 = EarlynessAwareAvoidEnergyBallsController(player2, 
+    #    physics, tclr.TriClassSingleDimensionLogisticRegression())
+    # controller2 = NaiveAvoidEnergyBallsController(player2, 
+    #    physics, lr.SingleDimensionLogisticRegression())
 
     milliseconds_per_frame = 17
     while 1:
