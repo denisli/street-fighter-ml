@@ -52,8 +52,8 @@ def main():
     mana_bar2 = ManaBar(400, 100, 100)
 
     # player 1 controller
-    controller1 = AvoidEnergyBallTeacherController(player1, physics)
-    #controller1 = Player1Controller(player1)
+    # controller1 = AvoidEnergyBallTeacherController(player1, physics)
+    controller1 = Player1Controller(player1)
 
     # player 2 controller
     # controller2 = Player2Controller(player2)
@@ -87,6 +87,12 @@ def main():
     # All Moves Softmax AI controller to walk to a certain location
     # controller2 = AllMovesSoftmaxGoToLocationController(player2, 
     #     physics, smnn.SoftmaxNeuralNetwork(), 200)
+
+    # AI Controller using QLearning to walk to a certain location
+    nStates = 1
+    nActions = 6
+    brain = ql.QLearning(nStates, nActions)
+    controller2 = QLearningGoToLocationController(player2, physics, brain, 50)
 
     # AI controller to punch a "punching bag"
     #brain = pickle.load(open('dumb_beat.p', 'r'))
@@ -217,4 +223,4 @@ if __name__ == '__main__':
     # for i in range(1):
     #     average += autotrain_main()
     #     print average/1
-    autotrain_main()
+    main()

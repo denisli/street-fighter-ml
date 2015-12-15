@@ -610,29 +610,34 @@ class QLearningGoToLocationController(Controller):
         self.prev_action = None # useless initialization
 
         # mapping from the neural net output to the actual move
+        self.prev_distance = get_character_center(self.character) - self.location
         self.move_map = {0: self.character.move_left, 1: self.character.move_right, 2: self.character.jump, 3: self.character.do_kick, 4: self.character.do_punch, 5: lambda *args: None}
 
     def make_action(self):
         # set the inputs into the neural network
+        if self.character.delay > 0: return # do nothing if character has delay
         distance = get_character_center(self.character) - self.location
-        state = [distance]
+        state = [distance / 640.0]
         print 'distance:', distance
         if distance < 3:
             print 'Reached destination!'
-            self.brain.train(self.prev_state, self.prev_action, 10)
+            huge_reward = 100
+            self.brain.update(state, huge_reward, is_terminal=True)
             self.character.bounding_box.x = self.location + 300
-            self.brain.epsilon = self.brain.epsilon / 2
             return
 
         if self.first_turn:
             self.first_turn = False
         else:
-            future_action = self.brain.get_best_action(state) # future relative to the past
-            future_score = self.brain.get_action_score(state, future_action)
-            self.brain.train(self.prev_state, self.prev_action, future_score / 20.0)
+            if abs(distance) < abs(self.prev_distance):
+                immediate_reward = 3
+                self.brain.update(state, immediate_reward, is_terminal=True)
+            else:
+                immediate_reward = -3
+                self.brain.update(state, immediate_reward, is_terminal=True)
 
-        best_action = self.brain.get_best_action(state, explore=True)
-        print self.brain.get_action_score(state, best_action)
+        self.prev_distance = distance
+        best_action = self.brain.pick_action(state)
         self.move_map[best_action]()
         self.prev_state = state
         self.prev_action = best_action
