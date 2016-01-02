@@ -1,9 +1,3 @@
-# This implementation of a standard feed forward network (network) is short and efficient, 
-# using numpy's array multiplications for fast forward and backward passes. The source 
-# code comes with a little example, where the network learns the XOR problem.
-#
-# Copyright 2008 - Thomas Rueckstiess
- 
 from numpy import *
 from sknn.mlp import Classifier, Layer
 import numpy as np
